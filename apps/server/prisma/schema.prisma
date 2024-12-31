@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// 简历表
+model resume {
+  id         Int   @id @default(autoincrement()) /// 主键ID
+  file_path  String @db.Text /// 文件存储路径
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  candidate candidate[]
+}
+
+/// 职位表
+model job {
+  id  Int @id @default(autoincrement()) /// 主键ID
+  title String @db.VarChar(100) /// 职位名称
+  description String? @db.Text /// 职位描述
+  status String @db.VarChar(32) /// 职位状态
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  candidate candidate[]
+}
+
+
+model candidate {
+  id         Int      @id @default(autoincrement()) /// 主键 ID
+  name       String   /// 姓名
+  email      String   /// 邮箱
+  phone      String   /// 手机号
+  job_id     Int
+  job        job      @relation(fields: [job_id], references: [id])/// 面试职位
+  resume_id  Int
+  resume     resume   @relation(fields: [resume_id], references: [id]) /// 简历 ID
+  status     String   /// 状态
+  created_at DateTime @default(now()) /// 创建时间
+  updated_at DateTime @updatedAt      /// 更新时间
+  interviews_tickets interviews_ticket[]
+}
+
+/// 面试主表;面试主表，发起面试时会先在这个表中创建一条数据，每个面试官都会创建一个子的面试单
+model interviews_ticket {
+  id         Int      @id @default(autoincrement()) /// 主键 ID
+  created_at DateTime @default(now()) /// 创建时间
+  updated_at DateTime @updatedAt      /// 更新时间
+  candidate_id Int /// 候选人ID
+  candidate candidate @relation(fields: [candidate_id], references: [id])
+  status String /// 状态
+  organizer String /// 发起人发起人
+  interviews_service_tickets interviews_service_ticket[]
+}
+
+model interviews_service_ticket {
+  id         Int      @id @default(autoincrement()) /// 主键 ID
+  created_at DateTime @default(now()) /// 创建时间
+  updated_at DateTime @updatedAt     /// 更新时间
+  status String /// 状态
+  feedback String @db.Text
+  interviewer String /// 面试官
+  ticket_id Int /// 面试表 ID
+  ticket interviews_ticket @relation(fields: [ticket_id], references: [id])
+}
+

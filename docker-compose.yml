@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres
+    container_name: recruitment-system-db
+    restart: always
+    shm_size: 128mb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: recruitment
+      POSTGRES_USER: recruitment
+      POSTGRES_DB: recruitment
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres_network
+
+volumes:
+  postgres_data:
+
+networks:
+  postgres_network:
+    driver: bridge
