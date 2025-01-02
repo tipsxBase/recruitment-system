@@ -19,7 +19,7 @@ model Resume {
 /// 职位表
 model Job {
   id  Int @id @default(autoincrement()) /// 主键ID
-  name String @db.VarChar(100) /// 职位名称
+  name String @db.VarChar(100) @unique  /// 职位名称
   description String? @db.Text /// 职位描述
   status String @db.VarChar(32) /// 职位状态
   createdAt DateTime @default(now())
@@ -27,7 +27,7 @@ model Job {
   candidate Candidate[]
 }
 
-
+/// 候选人表
 model Candidate {
   id         Int      @id @default(autoincrement()) /// 主键 ID
   name       String   /// 姓名
