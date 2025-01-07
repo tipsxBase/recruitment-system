@@ -4,11 +4,13 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import { ErrorCodes } from 'src/exception/ErrorCodes';
-import { UniqueException } from 'src/exception/UniqueException';
-import { ZodValidateException } from 'src/exception/ZodValidateException';
+import { ErrorCodes } from '@/lib/exception/ErrorCodes';
+import { UniqueException } from '@/lib/exception/UniqueException';
+import { ZodValidateException } from '@/lib/exception/ZodValidateException';
+import { TokenExpiredError } from '@nestjs/jwt';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -30,6 +32,19 @@ export class HttpExceptionFilter implements ExceptionFilter {
         success: false,
       };
       httpAdapter.reply(ctx.getResponse(), responseBody, exception.getStatus());
+    } else if (exception instanceof TokenExpiredError) {
+      Logger.error(exception);
+      const responseBody = {
+        code: HttpStatus.UNAUTHORIZED,
+        message: '用户认证过期，请重新登录',
+        errors: ['用户认证过期，请重新登录'],
+        success: false,
+      };
+      httpAdapter.reply(
+        ctx.getResponse(),
+        responseBody,
+        HttpStatus.UNAUTHORIZED,
+      );
     } else if (exception instanceof HttpException) {
       const message = exception.getResponse() as any;
       const responseBody = {

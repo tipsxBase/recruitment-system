@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { JobService } from './job.service';
 import { Job as JobModel } from '@prisma/client';
-import { ZodValidationPipe } from 'src/pipe/zod-validation.pipe';
+import { ZodValidationPipe } from '@/lib/pipe/zod-validation.pipe';
 import {
   CreateJobDto,
   createJobSchema,
@@ -18,7 +18,7 @@ import {
   updateJobSchema,
 } from './job.schema';
 import { omit } from 'lodash';
-import { PaginationResult } from 'src/common/types';
+import { PaginationResult } from '@/common/types';
 
 @Controller('job')
 export class JobController {

@@ -66,3 +66,96 @@ model InterviewsServiceTicket {
   ticket InterviewsTicket @relation(fields: [ticketId], references: [id])
 }
 
+
+
+// 定义用户状态的枚举
+enum UserStatus {
+  ACTIVE    // 用户已激活
+  INACTIVE  // 用户未激活
+  BANNED    // 用户已封禁
+  PENDING   // 用户待激活（例如，等待邮箱验证）
+}
+
+// User 模型
+model User {
+  id           Int         @id @default(autoincrement())  // 用户唯一标识
+  email        String      @unique                       // 用户邮箱，唯一
+  password     String      // 加密后的密码
+  username     String      @unique// 用户名
+  status       UserStatus  @default(ACTIVE)              // 用户状态（默认值为 ACTIVE）
+  createdAt    DateTime    @default(now())              // 创建时间
+  updatedAt    DateTime    @updatedAt                   // 更新时间
+  // 角色与权限关系
+  roles        UserRole[]
+}
+
+
+
+model UserRole {
+  userId  Int
+  roleId  Int
+  user    User  @relation(fields: [userId], references: [id])
+  role    Role  @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId]) // 联合主键
+}
+
+model Menu {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique // 菜单的唯一标识
+  path      String   @unique // 菜单的路径
+  name      String   // 菜单名称
+  parentId  Int?     // 上级菜单ID
+  parent    Menu?    @relation("MenuParent", fields: [parentId], references: [id])
+  children  Menu[]   @relation("MenuParent") // 子菜单的关系
+  buttons   Button[] // 菜单下的按钮信息
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  RoleMenu RoleMenu[]
+}
+
+model Button {
+  id        Int      @id @default(autoincrement())
+  name      String   // 按钮名称
+  action    String   // 按钮对应的操作
+  menuId    Int      // 所属菜单ID
+  menu      Menu     @relation(fields: [menuId], references: [id]) // 与菜单的关系
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  RoleButton RoleButton[]
+}
+
+
+model Role {
+  id        Int      @id @default(autoincrement())
+  name      String   // 角色名称
+  menus     RoleMenu[] 
+  buttons   RoleButton[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  UserRole UserRole[]
+}
+
+
+model RoleMenu {
+  roleId   Int
+  menuId   Int
+  role     Role   @relation(fields: [roleId], references: [id])
+  menu     Menu   @relation(fields: [menuId], references: [id])
+
+  @@id([roleId, menuId]) // 联合主键
+}
+
+model RoleButton {
+  roleId   Int
+  buttonId Int
+  role     Role   @relation(fields: [roleId], references: [id])
+  button   Button @relation(fields: [buttonId], references: [id])
+
+  @@id([roleId, buttonId]) // 联合主键
+}
+
+

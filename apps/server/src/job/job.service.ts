@@ -1,9 +1,9 @@
-import { UniqueException } from './../exception/UniqueException';
-import { Injectable } from '@nestjs/common';
+import { UniqueException } from '@/lib/exception/UniqueException';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Job, Prisma } from '@prisma/client';
 import { QueryJobListPaginationDto } from './job.schema';
-import { PaginationResult } from 'src/common/types';
+import { PaginationResult } from '@/common/types';
 
 @Injectable()
 export class JobService {
@@ -37,7 +37,7 @@ export class JobService {
   }): Promise<Job> {
     const { where, job } = params;
     if (job.name) {
-      const existedJob = await this.prisma.job.findUnique({
+      const duplicateJob = await this.prisma.job.findUnique({
         where: {
           name: job.name as string,
           NOT: {
@@ -45,12 +45,28 @@ export class JobService {
           },
         },
       });
-      if (existedJob) {
+      if (duplicateJob) {
         throw new UniqueException({
-          message: `Job with name ${job.name} already exists`,
+          message: `岗位名称 ${job.name} 已经存在`,
           uniqueColumn: ['name'],
         });
       }
+    }
+
+    const existedJob = await this.prisma.job.findUnique({
+      where: {
+        id: where.id as number,
+      },
+    });
+
+    if (!existedJob) {
+      throw new HttpException(
+        {
+          message: '岗位不存在',
+          errors: ['岗位不存在'],
+        },
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     return this.prisma.job.update({
