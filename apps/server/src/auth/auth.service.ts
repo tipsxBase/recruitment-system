@@ -36,4 +36,8 @@ export class AuthService {
     };
     return this.jwtService.sign(payload);
   }
+
+  async getCurrentAuthUser(userId: number) {
+    return this.usersService.findOne({ id: userId });
+  }
 }

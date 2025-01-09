@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "web:dev": "pnpm --filter @recruitment/web run dev",
     "server:dev": "pnpm --filter @recruitment/server run start:dev",
     "build:shared": "pnpm --filter @recruitment/shared run build"
   },

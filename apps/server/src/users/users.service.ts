@@ -20,9 +20,7 @@ export class UsersService {
 
   async findOne(params: UserDto) {
     return this.prisma.user.findUnique({
-      where: {
-        username: params.username,
-      },
+      where: params as any,
     });
   }
 

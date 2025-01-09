@@ -7,17 +7,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Request } from 'express';
+import { JwtUserData, Request } from 'express';
 import { Observable } from 'rxjs';
 import { IS_PUBLIC_KEY } from '@/lib/decorator/public.decorator';
 import { JwtService } from '@nestjs/jwt';
-import { UserStatus } from '@prisma/client';
-
-interface JwtUserData {
-  userId: number;
-  username: string;
-  status: UserStatus;
-}
 
 @Injectable()
 export class AuthorizationGuard implements CanActivate {
