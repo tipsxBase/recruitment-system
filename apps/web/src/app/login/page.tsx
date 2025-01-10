@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { PasswordInput } from "@/components/password-input";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   username: z.string().min(1, { message: "请输入用户名" }),
@@ -32,7 +33,7 @@ const formSchema = z.object({
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
-
+  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -41,16 +42,22 @@ const Login = () => {
     },
   });
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsLoading(false);
-    fetch("/api/auth", {
+    const res = await fetch("/api/auth", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
     });
-  }
+
+    if (!res.ok) {
+      alert("登录失败");
+    } else {
+      router.push("/interview");
+    }
+  };
 
   return (
     <div className="container grid h-svh flex-col items-center justify-center bg-primary-foreground lg:max-w-none lg:px-0">

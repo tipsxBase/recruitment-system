@@ -20,7 +20,7 @@ import {
 import { omit } from 'lodash';
 import { PaginationResult } from '@/common/types';
 
-@Controller('job')
+@Controller('/api/job')
 export class JobController {
   constructor(private readonly jobService: JobService) {}
 

@@ -1,19 +1,14 @@
-import { UsersService } from '@/users/users.service';
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { UserService } from '@/user/user.service';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { SignInbDto } from './auth.schema';
-import { UserDto } from '@/users/user.schema';
+import { UserDto } from '@/user/user.schema';
 import { UserStatus } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
+    private userService: UserService,
     private jwtService: JwtService,
   ) {}
 
@@ -22,7 +17,7 @@ export class AuthService {
       username: params.username,
     };
 
-    const foundUser = await this.usersService.findOne(userDto);
+    const foundUser = await this.userService.findOne(userDto);
     if (!foundUser || foundUser.password !== params.password) {
       throw new UnauthorizedException('用户名或密码错误');
     }
@@ -37,7 +32,7 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
-  async getCurrentAuthUser(userId: number) {
-    return this.usersService.findOne({ id: userId });
+  async validateToken(token: string) {
+    return this.jwtService.verify(token);
   }
 }

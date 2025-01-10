@@ -4,11 +4,11 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { HttpExceptionFilter } from '@/lib/filter/http-exception.filter';
 import { ResponseInterceptor } from '@/lib/interceptor/response.interceptor';
 import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
+import { UserModule } from './user/user.module';
 import { AuthorizationGuard } from '@/lib/guard/authorization.guard';
 
 @Module({
-  imports: [JobModule, AuthModule, UsersModule],
+  imports: [JobModule, AuthModule, UserModule],
   controllers: [],
   providers: [
     {

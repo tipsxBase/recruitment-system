@@ -4,7 +4,6 @@ import { SignInbDto, signInSchema } from './auth.schema';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { Public } from '@/lib/decorator/public.decorator';
-import { AuthUser } from '@/lib/decorator/auth-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -18,16 +17,13 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const accessToken = await this.authService.signIn(params);
+    res.cookie('token', accessToken);
     return { accessToken };
   }
 
-  @Get('current')
-  async getCurrentUser(@AuthUser('userId') userId: number) {
-    return this.authService.getCurrentAuthUser(userId);
-  }
-
+  @Public()
   @Post('validate-token')
-  async validateToken(@Body() params: any) {
-    console.log('validate-token', params);
+  async validateToken(@Body() params: { token: string }) {
+    return this.authService.validateToken(params.token);
   }
 }
