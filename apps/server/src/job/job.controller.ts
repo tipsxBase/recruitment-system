@@ -16,9 +16,9 @@ import {
   queryJobListPaginationSchema,
   UpdateJobDto,
   updateJobSchema,
-} from './job.schema';
+} from '@recruitment/schema';
 import { omit } from 'lodash';
-import { PaginationResult } from '@/common/types';
+import { PaginationResult } from '@recruitment/schema';
 
 @Controller('/api/job')
 export class JobController {

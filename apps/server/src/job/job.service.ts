@@ -2,8 +2,10 @@ import { UniqueException } from '@/lib/exception/UniqueException';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Job, Prisma } from '@prisma/client';
-import { QueryJobListPaginationDto } from './job.schema';
-import { PaginationResult } from '@/common/types';
+import {
+  QueryJobListPaginationDto,
+  PaginationResult,
+} from '@recruitment/schema';
 
 @Injectable()
 export class JobService {

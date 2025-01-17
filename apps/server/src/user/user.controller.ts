@@ -1,6 +1,7 @@
 import { AuthUser } from '@/lib/decorator/auth-user.decorator';
 import { Controller, Get } from '@nestjs/common';
 import { UserService } from './user.service';
+import { omit } from 'lodash';
 
 @Controller('/api/user')
 export class UserController {
@@ -8,6 +9,12 @@ export class UserController {
 
   @Get('current')
   async getCurrentUser(@AuthUser('userId') userId: number) {
-    return this.userService.findOne({ id: userId });
+    const user = await this.userService.findOne({ id: userId });
+    return omit(user, 'password');
+  }
+
+  @Get('/menus')
+  async getMenu() {
+    return this.userService.getMenu();
   }
 }

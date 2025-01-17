@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { UserDto } from './user.schema';
+import { UserDto } from '@recruitment/schema';
 
 @Injectable()
 export class UserService {
@@ -26,5 +26,16 @@ export class UserService {
 
   async findAll() {
     return [{ id: 1 }, { id: 2 }];
+  }
+
+  async getMenu() {
+    return this.prisma.menu.findMany({
+      where: {
+        parentId: null,
+      },
+      include: {
+        children: true,
+      },
+    });
   }
 }

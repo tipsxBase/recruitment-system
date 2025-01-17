@@ -6,12 +6,19 @@
   "scripts": {
     "web:dev": "pnpm --filter @recruitment/web run dev",
     "server:dev": "pnpm --filter @recruitment/server run start:dev",
-    "build:shared": "pnpm --filter @recruitment/shared run build"
+    "build:shared": "pnpm --filter @recruitment/shared run build",
+    "build:schema": "pnpm --filter @recruitment/schema run build",
+    "dev": "run-p web:dev server:dev",
+    "build": "run-p build:shared build:schema"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "typescript": "^5.7.2"
+  },
+  "devDependencies": {
+    "npm-run-all2": "^7.0.2",
+    "tsup": "^8.3.5"
   }
 }

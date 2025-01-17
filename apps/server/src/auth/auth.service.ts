@@ -1,8 +1,8 @@
 import { UserService } from '@/user/user.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { SignInbDto } from './auth.schema';
-import { UserDto } from '@/user/user.schema';
+import { SignInbDto } from '@recruitment/schema';
+import { UserDto } from '@recruitment/schema';
 import { UserStatus } from '@prisma/client';
 
 @Injectable()

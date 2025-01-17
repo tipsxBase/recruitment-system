@@ -1,0 +1,47 @@
+{
+  "name": "@recruitment/schema",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    "./auth.schema": {
+      "types": "./dist/auth.schema.d.ts",
+      "import": "./dist/auth.schema.js",
+      "require": "./dist/auth.schema.js"
+    },
+    "./user.schema": {
+      "types": "./dist/user.schema.d.ts",
+      "import": "./dist/user.schema.js",
+      "require": "./dist/user.schema.js"
+    },
+    "./job.schema": {
+      "types": "./dist/job.schema.d.ts",
+      "import": "./dist/job.schema.js",
+      "require": "./dist/job.schema.js"
+    },
+    "./interface": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.js"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {}
+}

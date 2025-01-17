@@ -103,8 +103,8 @@ model UserRole {
 model Menu {
   id        Int      @id @default(autoincrement())
   key       String   @unique // 菜单的唯一标识
-  path      String   @unique // 菜单的路径
-  name      String   // 菜单名称
+  path      String?    // 菜单的路径
+  name      String   @unique // 菜单名称
   parentId  Int?     // 上级菜单ID
   parent    Menu?    @relation("MenuParent", fields: [parentId], references: [id])
   children  Menu[]   @relation("MenuParent") // 子菜单的关系

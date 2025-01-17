@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Res, UsePipes } from '@nestjs/common';
 import { ZodValidationPipe } from '@/lib/pipe/zod-validation.pipe';
-import { SignInbDto, signInSchema } from './auth.schema';
+import { SignInbDto, signInSchema } from '@recruitment/schema';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { Public } from '@/lib/decorator/public.decorator';

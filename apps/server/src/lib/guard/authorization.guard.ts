@@ -12,6 +12,26 @@ import { Observable } from 'rxjs';
 import { IS_PUBLIC_KEY } from '@/lib/decorator/public.decorator';
 import { JwtService } from '@nestjs/jwt';
 
+const getTokens = (request: Request) => {
+  // 先从 cookie 中获取 token,如果没有再从 header 中获取
+  const cookie = new Cookie(request.headers.cookie!);
+  const tokenFromCookie = cookie.get('token');
+  if (tokenFromCookie) {
+    return tokenFromCookie;
+  }
+  const authorization = request.headers.authorization;
+
+  if (!authorization) {
+    throw new UnauthorizedException('用户未登录');
+  }
+  const [type, tokenFromHeader] = authorization.split(' ');
+  if (type !== 'Bearer' || !tokenFromHeader) {
+    throw new UnauthorizedException('用户未登录');
+  }
+
+  return tokenFromHeader;
+};
+
 @Injectable()
 export class AuthorizationGuard implements CanActivate {
   @Inject()
@@ -36,11 +56,7 @@ export class AuthorizationGuard implements CanActivate {
       return true;
     }
     // 从cookie中获取token
-    const cookie = new Cookie(request.headers.cookie!);
-    if (!cookie.has('token')) {
-      throw new UnauthorizedException('用户未登录');
-    }
-    const token = cookie.get('token')!;
+    const token = getTokens(request);
     const data = this.jwtService.verify<JwtUserData>(token);
     request.user = {
       userId: data.userId,

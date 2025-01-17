@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 
 import { NavMain } from "./nav-main";
-import { NavProjects } from "./nav-projects";
 import { NavUser } from "./nav-user";
 import { TeamSwitcher } from "./team-switcher";
 import {
@@ -25,6 +24,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { useBaseStore } from "../base-layout/BaseProvider";
 
 // This is sample data.
 const data = {
@@ -157,14 +157,14 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { menus } = useBaseStore();
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain items={menus} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />
