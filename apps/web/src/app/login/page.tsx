@@ -18,31 +18,19 @@ import Link from "next/link";
 import { PasswordInput } from "@/components/password-input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-
-const formSchema = z.object({
-  username: z.string().min(1, { message: "请输入用户名" }),
-  password: z
-    .string()
-    .min(1, {
-      message: "请输入密码",
-    })
-    .min(7, {
-      message: "Password must be at least 7 characters long",
-    }),
-});
-
+import { loginSchema } from "@recruitment/schema";
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       username: "",
       password: "",
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     setIsLoading(false);
     const res = await fetch("/api/auth", {
       method: "POST",

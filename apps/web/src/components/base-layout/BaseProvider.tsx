@@ -1,11 +1,8 @@
 import React from "react";
 import { createContext, useContext } from "react";
-import { MenuEntity, UserEntity } from "@recruitment/schema/interface";
+import createStore from "./createStore";
 
-export interface BaseContextProps {
-  menus: MenuEntity[];
-  user: UserEntity;
-}
+export type BaseContextProps = ReturnType<typeof createStore>;
 
 const BaseContext = createContext<BaseContextProps>({} as BaseContextProps);
 

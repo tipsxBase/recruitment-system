@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { MenuEntity, UserEntity } from "@recruitment/schema/interface";
 import { usePathname } from "next/navigation";
-import { useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { matchPath } from "@recruitment/shared";
+import { Route } from "@/app/actions/getRoutes";
 export interface MenuFiber {
   key: string;
   raw: MenuEntity;
@@ -135,9 +136,10 @@ const processMenuData = (
 interface BaseStoreProps {
   menus: MenuEntity[];
   user: UserEntity;
+  routes: Route[];
 }
 
-const createStore = ({ menus, user }: BaseStoreProps) => {
+const createStore = ({ menus, user, routes }: BaseStoreProps) => {
   /**
    * 菜单的链表关结构
    */
@@ -174,24 +176,98 @@ const createStore = ({ menus, user }: BaseStoreProps) => {
     );
   }, [menus]);
 
+  const pathname = usePathname();
+
+  const getOpenedKeys = useCallback(
+    (pathname: string, clientRoutes: Route[]) => {
+      let matched = null;
+      let matchedRoute = null;
+      const openedKeys = [];
+      for (const route of clientRoutes) {
+        matched = matchPath(route.path, pathname);
+        if (matched) {
+          matchedRoute = route;
+          break;
+        }
+      }
+
+      if (matchedRoute) {
+        let matchedPath = matchedRoute.path;
+        if (matchedRoute.parent) {
+          matchedPath = matchedRoute.parent;
+        }
+        if (menuMap.current.has(matchedPath)) {
+          const menuFiber = menuMap.current.get(matchedPath);
+          let current = menuFiber.return;
+          while (current) {
+            openedKeys.push(current.key);
+            current = current.return;
+          }
+          return openedKeys;
+        }
+      }
+    },
+    []
+  );
+
+  const [openedKeys, setOpenedKeys] = useState<string[]>(() =>
+    getOpenedKeys(pathname, routes)
+  );
+
+  const updateOpenedKeys = useCallback(
+    (key: string, open: boolean) => {
+      if (open && !openedKeys.includes(key)) {
+        setOpenedKeys((prev) => {
+          if (prev.includes(key)) {
+            return prev;
+          }
+          return [...prev, key];
+        });
+      } else {
+        setOpenedKeys((prev) => {
+          if (!prev.includes(key)) {
+            return prev;
+          }
+          return prev.filter((k) => k !== key);
+        });
+      }
+    },
+    [openedKeys]
+  );
+
+  const activeMenu = useMemo(() => {
+    let matched = null;
+    let matchedRoute = null;
+    for (const route of routes) {
+      matched = matchPath(route.path, pathname);
+      if (matched) {
+        matchedRoute = route;
+        break;
+      }
+    }
+
+    if (matchedRoute) {
+      let matchedPath = matchedRoute.path;
+      if (matchedRoute.parent) {
+        matchedPath = matchedRoute.parent;
+      }
+      if (menuMap.current.has(matchedPath)) {
+        const menuFiber = menuMap.current.get(matchedPath);
+
+        return menuFiber.key;
+      }
+    }
+  }, [pathname, routes]);
+
   const store = useMemo(() => {
     return {
       menus,
       user,
+      openedKeys,
+      updateOpenedKeys,
+      activeMenu,
     };
-  }, [menus, user]);
-
-  const pathname = usePathname();
-  const openedKeys = useMemo(() => {
-    menuMap.current.forEach((menu) => {
-      if (menu) {
-        const match = matchPath(menu.raw.path, pathname);
-        if (match) {
-          debugger;
-        }
-      }
-    });
-  }, [pathname]);
+  }, [menus, user, openedKeys, updateOpenedKeys, activeMenu]);
 
   return store;
 };

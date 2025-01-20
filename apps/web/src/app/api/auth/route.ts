@@ -1,19 +1,3 @@
-import { z } from "zod";
-
-export const formSchema = z.object({
-  username: z.string().min(1, { message: "请输入用户名" }),
-  password: z
-    .string()
-    .min(1, {
-      message: "请输入密码",
-    })
-    .min(7, {
-      message: "Password must be at least 7 characters long",
-    }),
-});
-
-export type LoginForm = z.infer<typeof formSchema>;
-
 export async function POST(req: Request) {
   const params = await req.json();
 

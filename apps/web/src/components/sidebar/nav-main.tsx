@@ -17,6 +17,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { MenuEntity } from "@recruitment/schema/interface";
+import { useBaseStore } from "../base-layout/BaseProvider";
 
 const iconMapper = {
   Recruitment: UserRoundSearch,
@@ -27,14 +28,29 @@ const getIcon = (key) => {
   return iconMapper[key];
 };
 
-export function NavMain({ items }: { items: MenuEntity[] }) {
+export function NavMain({
+  items,
+  openedKeys,
+}: {
+  items: MenuEntity[];
+  openedKeys: string[];
+}) {
+  const { updateOpenedKeys, activeMenu } = useBaseStore();
   return (
     <SidebarGroup>
       <SidebarMenu>
         {items.map((item) => {
           const MenuIcon = getIcon(item.key);
           return (
-            <Collapsible key={item.name} asChild className="group/collapsible">
+            <Collapsible
+              onOpenChange={(open) => {
+                updateOpenedKeys(item.key, open);
+              }}
+              key={item.key}
+              open={openedKeys.includes(item.key)}
+              asChild
+              className="group/collapsible"
+            >
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton tooltip={item.name}>
@@ -45,15 +61,25 @@ export function NavMain({ items }: { items: MenuEntity[] }) {
                 </CollapsibleTrigger>
                 <CollapsibleContent className="CollapsibleContent">
                   <SidebarMenuSub>
-                    {item.children?.map((subItem) => (
-                      <SidebarMenuSubItem key={subItem.name}>
-                        <SidebarMenuSubButton asChild>
-                          <a href={subItem.path}>
-                            <span>{subItem.name}</span>
-                          </a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
+                    {item.children?.map((subItem) => {
+                      console.log(
+                        "activeMenu === subItem.key",
+                        activeMenu === subItem.key,
+                        subItem
+                      );
+                      return (
+                        <SidebarMenuSubItem key={subItem.key}>
+                          <SidebarMenuSubButton
+                            isActive={activeMenu === subItem.key}
+                            asChild
+                          >
+                            <a href={subItem.path}>
+                              <span>{subItem.name}</span>
+                            </a>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      );
+                    })}
                   </SidebarMenuSub>
                 </CollapsibleContent>
               </SidebarMenuItem>

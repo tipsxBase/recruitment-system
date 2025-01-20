@@ -1,20 +1,23 @@
 import path from "path";
 import { globby } from "globby";
 
+export interface Route {
+  path: string;
+  parent?: string;
+}
 export const getRoutes = async () => {
   const routeDir = path.join(process.cwd(), "src/app");
   console.log(process.cwd());
-  const maybeRoutes = await globby(
-    ["**/page.js", "**/page.tsx", "!layout.tsx"],
-    {
-      cwd: routeDir,
-    }
-  );
-  console.log("maybeRoutes", maybeRoutes);
+  const maybeRoutes = await globby(["**/page.js", "**/page.tsx"], {
+    cwd: routeDir,
+  });
+  const routes: Route[] = [];
   for (const filepath of maybeRoutes) {
     const routePath = await parseFilepathToRoute(filepath);
-    console.log(filepath, routePath);
+    routes.push(routePath);
   }
+  console.log("routes", routes);
+  return routes;
 };
 
 const routeGroupExpression = /\(.*?\)/;

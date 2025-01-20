@@ -11,9 +11,9 @@ export default async function RootLayout({
   const res = await getMenus();
   const session = await getSession();
   const { data } = res;
-  await getRoutes();
+  const routes = await getRoutes();
   return (
-    <BaseLayout user={session} menus={data}>
+    <BaseLayout user={session} menus={data} routes={routes}>
       {children}
     </BaseLayout>
   );

@@ -17,16 +17,19 @@ import { AppSidebar } from "@/components/sidebar";
 import { MenuEntity, UserEntity } from "@recruitment/schema/interface";
 import { BaseProvider } from "./BaseProvider";
 import createStore from "./createStore";
+import { Route } from "@/app/actions/getRoutes";
 export default function BaseLayout({
   children,
   menus,
   user,
+  routes,
 }: Readonly<{
   children: React.ReactNode;
   menus: MenuEntity[];
   user: UserEntity;
+  routes: Route[];
 }>) {
-  const store = createStore({ menus, user });
+  const store = createStore({ menus, user, routes });
 
   return (
     <BaseProvider store={store}>
