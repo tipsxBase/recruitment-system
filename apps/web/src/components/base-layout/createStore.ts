@@ -1,9 +1,11 @@
+"use client";
 /* eslint-disable react-hooks/rules-of-hooks */
 import { MenuEntity, UserEntity } from "@recruitment/schema/interface";
-import { usePathname } from "next/navigation";
+import {
+  useSelectedLayoutSegment,
+  useSelectedLayoutSegments,
+} from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { matchPath } from "@recruitment/shared";
-import { Route } from "@/app/actions/getRoutes";
 export interface MenuFiber {
   key: string;
   raw: MenuEntity;
@@ -136,10 +138,9 @@ const processMenuData = (
 interface BaseStoreProps {
   menus: MenuEntity[];
   user: UserEntity;
-  routes: Route[];
 }
 
-const createStore = ({ menus, user, routes }: BaseStoreProps) => {
+const createStore = ({ menus, user }: BaseStoreProps) => {
   /**
    * 菜单的链表关结构
    */
@@ -176,42 +177,24 @@ const createStore = ({ menus, user, routes }: BaseStoreProps) => {
     );
   }, [menus]);
 
-  const pathname = usePathname();
-
-  const getOpenedKeys = useCallback(
-    (pathname: string, clientRoutes: Route[]) => {
-      let matched = null;
-      let matchedRoute = null;
-      const openedKeys = [];
-      for (const route of clientRoutes) {
-        matched = matchPath(route.path, pathname);
-        if (matched) {
-          matchedRoute = route;
-          break;
-        }
+  const segment = useSelectedLayoutSegment();
+  const segments = useSelectedLayoutSegments();
+  const getOpenedKeys = useCallback((segment: string) => {
+    const menuPath = `/${segment}`;
+    const openedKeys: string[] = [];
+    if (menuMap.current.has(menuPath)) {
+      const menuFiber = menuMap.current.get(menuPath);
+      let current = menuFiber.return;
+      while (current) {
+        openedKeys.push(current.key);
+        current = current.return;
       }
-
-      if (matchedRoute) {
-        let matchedPath = matchedRoute.path;
-        if (matchedRoute.parent) {
-          matchedPath = matchedRoute.parent;
-        }
-        if (menuMap.current.has(matchedPath)) {
-          const menuFiber = menuMap.current.get(matchedPath);
-          let current = menuFiber.return;
-          while (current) {
-            openedKeys.push(current.key);
-            current = current.return;
-          }
-          return openedKeys;
-        }
-      }
-    },
-    []
-  );
+      return openedKeys;
+    }
+  }, []);
 
   const [openedKeys, setOpenedKeys] = useState<string[]>(() =>
-    getOpenedKeys(pathname, routes)
+    getOpenedKeys(segment)
   );
 
   const updateOpenedKeys = useCallback(
@@ -235,29 +218,38 @@ const createStore = ({ menus, user, routes }: BaseStoreProps) => {
     [openedKeys]
   );
 
+  const breadcrumbs = useMemo(() => {
+    const breadcrumbItems = [];
+    segments.reduce((prev, current) => {
+      const matchUrl = `${prev}/${current}`;
+      let menuFiber = menuMap.current.get(matchUrl);
+      if (!menuFiber) {
+        menuFiber = menuMap.current.get(`${prev}`);
+        // TODO 待功能完全后完善
+      } else {
+        while (menuFiber) {
+          breadcrumbItems.push({
+            key: menuFiber.key,
+            name: menuFiber.raw.name,
+            path: menuFiber.raw.path,
+          });
+          menuFiber = menuFiber.return;
+        }
+      }
+
+      return matchUrl;
+    }, "");
+    return breadcrumbItems.reverse();
+  }, [segments]);
+
   const activeMenu = useMemo(() => {
-    let matched = null;
-    let matchedRoute = null;
-    for (const route of routes) {
-      matched = matchPath(route.path, pathname);
-      if (matched) {
-        matchedRoute = route;
-        break;
-      }
-    }
+    const menuPath = `/${segment}`;
+    if (menuMap.current.has(`/${segment}`)) {
+      const menuFiber = menuMap.current.get(menuPath);
 
-    if (matchedRoute) {
-      let matchedPath = matchedRoute.path;
-      if (matchedRoute.parent) {
-        matchedPath = matchedRoute.parent;
-      }
-      if (menuMap.current.has(matchedPath)) {
-        const menuFiber = menuMap.current.get(matchedPath);
-
-        return menuFiber.key;
-      }
+      return menuFiber.key;
     }
-  }, [pathname, routes]);
+  }, [segment]);
 
   const store = useMemo(() => {
     return {
@@ -266,8 +258,9 @@ const createStore = ({ menus, user, routes }: BaseStoreProps) => {
       openedKeys,
       updateOpenedKeys,
       activeMenu,
+      breadcrumbs,
     };
-  }, [menus, user, openedKeys, updateOpenedKeys, activeMenu]);
+  }, [menus, user, openedKeys, updateOpenedKeys, activeMenu, breadcrumbs]);
 
   return store;
 };

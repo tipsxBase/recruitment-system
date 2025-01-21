@@ -4,7 +4,6 @@ import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("token"); // 从 cookies 获取 token
-  console.log("middleware", req.url);
   if (!token) {
     // 没有 token，跳转到登录页面
     return NextResponse.redirect(new URL("/login", req.url));

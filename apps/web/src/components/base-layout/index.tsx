@@ -5,31 +5,21 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { AppSidebar } from "@/components/sidebar";
 import { MenuEntity, UserEntity } from "@recruitment/schema/interface";
 import { BaseProvider } from "./BaseProvider";
 import createStore from "./createStore";
-import { Route } from "@/app/actions/getRoutes";
+import ClientBreadcrumb from "../client-breadcrumb";
 export default function BaseLayout({
   children,
   menus,
   user,
-  routes,
 }: Readonly<{
   children: React.ReactNode;
   menus: MenuEntity[];
   user: UserEntity;
-  routes: Route[];
 }>) {
-  const store = createStore({ menus, user, routes });
+  const store = createStore({ menus, user });
 
   return (
     <BaseProvider store={store}>
@@ -40,19 +30,7 @@ export default function BaseLayout({
             <div className="flex items-center gap-2 px-4">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-4" />
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="#">
-                      Building Your Application
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Data Fetching</BreadcrumbPage>
-                  </BreadcrumbItem>
-                </BreadcrumbList>
-              </Breadcrumb>
+              <ClientBreadcrumb />
             </div>
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>

@@ -157,14 +157,14 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { menus, openedKeys } = useBaseStore();
+  const { menus } = useBaseStore();
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={menus} openedKeys={openedKeys} />
+        <NavMain items={menus} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

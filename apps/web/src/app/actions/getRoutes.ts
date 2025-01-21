@@ -1,3 +1,4 @@
+"use server";
 import path from "path";
 import { globby } from "globby";
 
@@ -7,7 +8,6 @@ export interface Route {
 }
 export const getRoutes = async () => {
   const routeDir = path.join(process.cwd(), "src/app");
-  console.log(process.cwd());
   const maybeRoutes = await globby(["**/page.js", "**/page.tsx"], {
     cwd: routeDir,
   });
@@ -16,7 +16,6 @@ export const getRoutes = async () => {
     const routePath = await parseFilepathToRoute(filepath);
     routes.push(routePath);
   }
-  console.log("routes", routes);
   return routes;
 };
 
