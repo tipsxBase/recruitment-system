@@ -18,11 +18,12 @@ import Link from "next/link";
 import { PasswordInput } from "@/components/password-input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { loginSchema } from "@recruitment/schema";
+import { LoginForm, loginSchema } from "@recruitment/schema";
+import { BackgroundBeamsWithCollision } from "@/components/ui/background-beams-with-collision";
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const form = useForm<z.infer<typeof loginSchema>>({
+  const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       username: "",
@@ -31,32 +32,38 @@ const Login = () => {
   });
 
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
-    setIsLoading(false);
-    const res = await fetch("/api/auth", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
+    try {
+      setIsLoading(true);
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
-    if (!res.ok) {
-      alert("登录失败");
-    } else {
-      router.push("/interview");
+      if (!res.ok) {
+        alert("登录失败");
+      } else {
+        router.push("/interview");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="container grid h-svh flex-col items-center justify-center bg-primary-foreground lg:max-w-none lg:px-0">
-      <div className="mx-auto flex w-full flex-col justify-center space-y-2 sm:w-[480px] lg:p-8">
-        <Card className="p-6">
-          <div className="flex flex-col space-y-2 text-left">
-            <h1 className="text-2xl font-semibold tracking-tight">招聘系统</h1>
-          </div>
-          <div className="grid gap-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)}>
+    <BackgroundBeamsWithCollision>
+      <div className="container grid h-svh items-center justify-center lg:max-w-none lg:px-0">
+        <div className="mx-auto flex w-full flex-col justify-center space-y-2 sm:w-[480px] lg:p-8">
+          <Card className="p-6">
+            <div className="flex flex-col space-y-2 text-left">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                招聘系统
+              </h1>
+            </div>
+            <div className="grid gap-6">
+              <Form form={form} onSubmit={form.handleSubmit(onSubmit)}>
                 <div className="grid gap-2">
                   <FormField
                     control={form.control}
@@ -96,12 +103,12 @@ const Login = () => {
                     Login
                   </Button>
                 </div>
-              </form>
-            </Form>
-          </div>
-        </Card>
+              </Form>
+            </div>
+          </Card>
+        </div>
       </div>
-    </div>
+    </BackgroundBeamsWithCollision>
   );
 };
 

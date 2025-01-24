@@ -38,12 +38,12 @@ const ClientBreadcrumb = () => {
               );
             } else {
               return (
-                <>
+                <Fragment key={item.key}>
                   <BreadcrumbItem className="hidden md:block">
                     {item.name}
                   </BreadcrumbItem>
                   <BreadcrumbSeparator className="hidden md:block" />
-                </>
+                </Fragment>
               );
             }
           }

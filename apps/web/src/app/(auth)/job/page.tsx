@@ -1,9 +1,11 @@
-import { getSession } from "@/app/actions/session";
+import JobEditor, { JobEditorMode } from "@/components/job/JobEditor";
 
 const Job = async () => {
-  await getSession();
-
-  return <div>Job</div>;
+  return (
+    <div className="h-full">
+      <JobEditor mode={JobEditorMode.Create} />
+    </div>
+  );
 };
 
 export default Job;

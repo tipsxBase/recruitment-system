@@ -8,6 +8,7 @@ export async function POST(req: Request) {
     },
     body: JSON.stringify(params),
   });
+
   if (!res.ok) {
     const text = await res.text();
     return new Response(text, {

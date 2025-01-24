@@ -4,6 +4,7 @@ import {
   ExecutionContext,
   Inject,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
@@ -44,7 +45,7 @@ export class AuthorizationGuard implements CanActivate {
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
     const request: Request = context.switchToHttp().getRequest();
-
+    Logger.debug(request.url, request.method);
     // 用 reflector 从目标 controller 和 handler 上拿到 IS_PUBLIC_KEY 的 metadata。
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getClass(),
@@ -58,6 +59,7 @@ export class AuthorizationGuard implements CanActivate {
     // 从cookie中获取token
     const token = getTokens(request);
     const data = this.jwtService.verify<JwtUserData>(token);
+    console.log('data', token);
     request.user = {
       userId: data.userId,
       username: data.username,

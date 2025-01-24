@@ -13,6 +13,8 @@ export const createJobSchema = z.object({
 
 export type CreateJobDto = z.infer<typeof createJobSchema>;
 
+export type JobStatus = CreateJobDto["status"];
+
 export const updateJobSchema = z.object({
   id: z.number().min(1, "岗位ID不能为空"),
   name: z
