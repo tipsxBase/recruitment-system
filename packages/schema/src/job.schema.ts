@@ -1,5 +1,5 @@
 import { paginationSchema } from "@/common-schema";
-import { z } from "zod";
+import { string, z } from "zod";
 
 export const createJobSchema = z.object({
   name: z
@@ -34,8 +34,23 @@ export type UpdateJobDto = z.infer<typeof updateJobSchema>;
 export const queryJobListPaginationSchema = paginationSchema.extend({
   name: z.string().optional(),
   status: z.enum(["active", "inactive"]).optional(),
+  sorting: z
+    .object({
+      id: z.enum(["createdAt", "updatedAt"]),
+      desc: z.boolean(),
+    })
+    .optional(),
 });
 
 export type QueryJobListPaginationDto = z.infer<
   typeof queryJobListPaginationSchema
 >;
+
+export type JobEntity = {
+  id: number;
+  name: string;
+  description: string;
+  status: "active" | "inactive";
+  createdAt: string;
+  updatedAt: string;
+};

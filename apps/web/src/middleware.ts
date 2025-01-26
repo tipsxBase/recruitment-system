@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("token"); // 从 cookies 获取 token
-  console.log("【middleware】", token, req.url);
+  console.log("【middleware】", req.url);
   if (!token) {
     // 没有 token，跳转到登录页面
     return NextResponse.redirect(new URL("/login", req.url));
@@ -20,7 +20,6 @@ export async function middleware(req: NextRequest) {
       },
     }
   );
-  console.log("【middleware】", res.ok, res.status);
   if (!res.ok) {
     // 如果 token 无效或过期，跳转到登录页面
     return NextResponse.redirect(new URL("/login", req.url));

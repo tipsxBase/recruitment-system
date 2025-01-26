@@ -13,7 +13,6 @@ import {
 
 const ClientBreadcrumb = () => {
   const { breadcrumbs } = useBaseStore();
-  console.log("breadcrumbs", breadcrumbs);
   return (
     <Breadcrumb>
       <BreadcrumbList>

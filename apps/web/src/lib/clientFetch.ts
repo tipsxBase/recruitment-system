@@ -57,11 +57,11 @@ const buildQueryParams = (
 };
 
 // GET 请求方法
-export const getRequest = (
+export const getRequest = <P extends Record<string, any> = any, T = any>(
   url: string,
-  params: Record<string, any> = {},
+  params: P,
   headers: RequestHeaders = {}
-): Promise<any> => {
+): Promise<T> => {
   const queryString = buildQueryParams(params);
   return request(url + queryString, "GET", null, headers);
 };

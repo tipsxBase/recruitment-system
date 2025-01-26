@@ -1,5 +1,5 @@
 export interface PaginationResult<T> {
-  page: number;
+  pageIndex: number;
   pageSize: number;
   total: number;
   records: T[];
@@ -25,12 +25,7 @@ export interface RecruitmentResponse<T> {
 export interface RecruitmentPaginationResponse<T> {
   code: number;
   message: string;
-  data: {
-    records: T[];
-    total: number;
-    page: number;
-    pageSize: number;
-  };
+  data: PaginationResult<T>;
 }
 
 export * from "./user.interface";

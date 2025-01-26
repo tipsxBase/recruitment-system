@@ -22,5 +22,8 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.10.5"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.13"
   }
 }

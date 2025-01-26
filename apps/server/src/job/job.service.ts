@@ -80,10 +80,11 @@ export class JobService {
   async getJobs(
     params: QueryJobListPaginationDto,
   ): Promise<PaginationResult<Job>> {
-    const { page, pageSize, ...job } = params;
-    const skip = (page - 1) * pageSize; // 计算跳过多少条数据
+    const { pageIndex, pageSize, sorting, ...job } = params;
+    const skip = pageIndex * pageSize; // 计算跳过多少条数据
     const take = pageSize; // 每页返回多少条数据
-    const jobs = await this.prisma.job.findMany({
+
+    const args: Prisma.JobFindManyArgs = {
       skip,
       take,
       where: {
@@ -92,7 +93,15 @@ export class JobService {
         },
         status: job.status,
       },
-    });
+    };
+
+    if (sorting) {
+      args.orderBy = {
+        [sorting.id]: sorting.desc ? 'desc' : 'asc',
+      };
+    }
+
+    const jobs = await this.prisma.job.findMany(args);
     const total = await this.prisma.job.count({
       where: {
         name: {
@@ -100,15 +109,12 @@ export class JobService {
         },
         status: job.status,
       },
-      orderBy: {
-        updatedAt: 'desc',
-      },
     });
 
     return {
       records: jobs,
       total,
-      page,
+      pageIndex,
       pageSize,
     };
   }

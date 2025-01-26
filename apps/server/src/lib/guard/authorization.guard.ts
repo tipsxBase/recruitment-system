@@ -59,7 +59,6 @@ export class AuthorizationGuard implements CanActivate {
     // 从cookie中获取token
     const token = getTokens(request);
     const data = this.jwtService.verify<JwtUserData>(token);
-    console.log('data', token);
     request.user = {
       userId: data.userId,
       username: data.username,
