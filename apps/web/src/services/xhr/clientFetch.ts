@@ -67,11 +67,11 @@ export const getRequest = <P extends Record<string, any> = any, T = any>(
 };
 
 // POST 请求方法
-export const postRequest = (
+export const postRequest = <P extends RequestBody, T = any>(
   url: string,
-  body: RequestBody,
+  body: P,
   headers: RequestHeaders = {}
-): Promise<any> => {
+): Promise<T> => {
   return request(url, "POST", body, headers);
 };
 

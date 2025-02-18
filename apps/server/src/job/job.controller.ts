@@ -17,7 +17,7 @@ import {
   UpdateJobDto,
   updateJobSchema,
 } from '@recruitment/schema';
-import { omit } from 'lodash';
+import { omit } from '@recruitment/shared';
 import { PaginationResult } from '@recruitment/schema';
 
 @Controller('/api/job')

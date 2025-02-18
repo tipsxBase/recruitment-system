@@ -31,8 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { postRequest } from "@/lib/clientFetch";
 import { useToast } from "@/hooks/use-toast";
+import { createJob } from "@/services/JobService";
 
 export enum JobEditorMode {
   Create,
@@ -59,7 +59,7 @@ const JobEditor = (props: JobEditorProps) => {
   const title = mode === JobEditorMode.Create ? "添加岗位" : "编辑岗位";
 
   const onSubmit = async (values) => {
-    postRequest("/api/job", values).then(() => {
+    createJob(values).then(() => {
       toast({
         variant: "default",
         description: "岗位添加成功",
@@ -164,7 +164,7 @@ const JobEditor = (props: JobEditorProps) => {
         </Form>
         <DialogFooter>
           <Button type="submit" form="job-form">
-            Save changes
+            保存
           </Button>
         </DialogFooter>
       </DialogContent>

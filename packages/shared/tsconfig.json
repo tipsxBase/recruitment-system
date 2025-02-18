@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "ESNext",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -14,6 +14,7 @@
     "skipLibCheck": true,
     "strictNullChecks": true,
     "noImplicitAny": false,
+    "moduleResolution": "bundler",
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,

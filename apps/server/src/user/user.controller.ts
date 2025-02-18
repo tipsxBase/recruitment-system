@@ -1,7 +1,7 @@
 import { AuthUser } from '@/lib/decorator/auth-user.decorator';
 import { Controller, Get } from '@nestjs/common';
 import { UserService } from './user.service';
-import { omit } from 'lodash';
+import { omit } from '@recruitment/shared';
 
 @Controller('/api/user')
 export class UserController {

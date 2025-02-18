@@ -5,9 +5,11 @@ import { JobEntity } from "@recruitment/schema";
 import { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 import { DataTable } from "../data-table";
-import { getJobs } from "@/lib/service/JobService";
+import { getJobs } from "@/services/JobService";
 import { formatDate } from "@recruitment/shared";
 import AutoTooltip from "../auto-tooltip";
+import { cn } from "@/lib/utils";
+
 const JobTable = () => {
   const columns = useMemo<ColumnDef<JobEntity>[]>(() => {
     return [
@@ -19,6 +21,13 @@ const JobTable = () => {
         cell: ({ row }) => (
           <div className="w-[80px]">{row.getValue("name")}</div>
         ),
+        meta: {
+          className: cn(
+            "drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.1)] dark:drop-shadow-[0_1px_2px_rgb(255_255_255_/_0.1)] lg:drop-shadow-none",
+            "bg-background transition-colors duration-200 group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted",
+            "sticky left-6 md:table-cell"
+          ),
+        },
         enableSorting: false,
         enableHiding: false,
       },
@@ -29,11 +38,8 @@ const JobTable = () => {
         ),
         cell: ({ row }) => {
           return (
-            <div className="max-w-32 truncate font-medium sm:max-w-72 md:max-w-[31rem]">
-              <AutoTooltip
-                renderTooltip={(text) => <pre>{text}</pre>}
-                text={row.getValue("description")}
-              />
+            <div className="w-60 truncate font-medium sm:max-w-72 md:max-w-[31rem]">
+              <AutoTooltip text={row.getValue("description")} />
             </div>
           );
         },
@@ -69,6 +75,9 @@ const JobTable = () => {
               {formatDate(row.getValue("createdAt"))} {}
             </div>
           );
+        },
+        meta: {
+          className: "w-fit",
         },
         filterFn: (row, id, value) => {
           return value.includes(row.getValue(id));
