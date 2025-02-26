@@ -9,6 +9,7 @@ import { getJobs } from "@/services/JobService";
 import { formatDate } from "@recruitment/shared";
 import AutoTooltip from "../auto-tooltip";
 import { cn } from "@/lib/utils";
+import { JobTableRowActions } from "./JobTableRowActions";
 
 const JobTable = () => {
   const columns = useMemo<ColumnDef<JobEntity>[]>(() => {
@@ -19,13 +20,13 @@ const JobTable = () => {
           <DataTableColumnHeader column={column} title="岗位名称" />
         ),
         cell: ({ row }) => (
-          <div className="w-[80px]">{row.getValue("name")}</div>
+          <div className="w-[120px]">{row.getValue("name")}</div>
         ),
         meta: {
           className: cn(
             "drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.1)] dark:drop-shadow-[0_1px_2px_rgb(255_255_255_/_0.1)] lg:drop-shadow-none",
             "bg-background transition-colors duration-200 group-hover/row:bg-muted group-data-[state=selected]/row:bg-muted",
-            "sticky left-6 md:table-cell"
+            "sticky left-0 md:table-cell"
           ),
         },
         enableSorting: false,
@@ -38,8 +39,8 @@ const JobTable = () => {
         ),
         cell: ({ row }) => {
           return (
-            <div className="w-60 truncate font-medium sm:max-w-72 md:max-w-[31rem]">
-              <AutoTooltip text={row.getValue("description")} />
+            <div className="w-full max-h-20 font-medium sm:w-72 md:w-[36rem] lg:w-[48rem]">
+              <AutoTooltip Wrapper="pre" text={row.getValue("description")} />
             </div>
           );
         },
@@ -77,7 +78,7 @@ const JobTable = () => {
           );
         },
         meta: {
-          className: "w-fit",
+          className: "w-fit text-nowrap",
         },
         filterFn: (row, id, value) => {
           return value.includes(row.getValue(id));
@@ -95,13 +96,19 @@ const JobTable = () => {
             </div>
           );
         },
+        meta: {
+          className: "w-fit text-nowrap",
+        },
         filterFn: (row, id, value) => {
           return value.includes(row.getValue(id));
         },
       },
       {
         id: "actions",
-        cell: ({ row }) => <></>,
+        cell: ({ row }) => <JobTableRowActions row={row} />,
+        meta: {
+          className: "bg-background w-[40px] sticky right-0",
+        },
       },
     ];
   }, []);

@@ -1,14 +1,19 @@
-import JobEditor, { JobEditorMode } from "@/components/job/JobEditor";
+import JobActions from "@/components/job/JobActions";
+import JobEditor from "@/components/job/JobEditor";
 import JobTable from "@/components/job/JobTable";
+import { JobStoreProvider } from "@/providers/job-store-provider";
 
-const Job = async () => {
+const Job = () => {
   return (
-    <div className="h-full">
-      <JobEditor mode={JobEditorMode.Create} />
-      <div className="-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0">
-        <JobTable />
+    <JobStoreProvider>
+      <div className="h-full">
+        <JobActions />
+        <JobEditor />
+        <div className="-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-x-12 lg:space-y-0">
+          <JobTable />
+        </div>
       </div>
-    </div>
+    </JobStoreProvider>
   );
 };
 

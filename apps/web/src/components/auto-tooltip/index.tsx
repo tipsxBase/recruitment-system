@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  ReactNode,
+  ComponentType,
+  HTMLElementType,
+} from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -8,19 +15,27 @@ import {
 import { cn } from "@/lib/utils";
 
 interface AutoTooltipProps {
-  text: string | number;
+  text: ReactNode;
   className?: string;
+  Wrapper?: ComponentType<any> | HTMLElementType;
 }
 
-export default function AutoTooltip({ text, className }: AutoTooltipProps) {
+export default function AutoTooltip({
+  text,
+  className,
+  Wrapper = "span",
+}: AutoTooltipProps) {
   const [isTruncated, setIsTruncated] = useState<boolean>(false);
   const textRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const checkTruncation = () => {
       if (textRef.current) {
-        const { scrollWidth, clientWidth } = textRef.current;
-        setIsTruncated(scrollWidth > clientWidth);
+        const { scrollWidth, clientWidth, scrollHeight, clientHeight } =
+          textRef.current;
+        setIsTruncated(
+          scrollWidth > clientWidth || scrollHeight > clientHeight
+        );
       }
     };
 
@@ -40,7 +55,7 @@ export default function AutoTooltip({ text, className }: AutoTooltipProps) {
   }, []);
 
   return (
-    <TooltipProvider delayDuration={100} disableHoverableContent>
+    <TooltipProvider delayDuration={100}>
       <Tooltip>
         <TooltipTrigger disabled={!isTruncated} asChild>
           <div
@@ -54,7 +69,9 @@ export default function AutoTooltip({ text, className }: AutoTooltipProps) {
             {text}
           </div>
         </TooltipTrigger>
-        <TooltipContent>{text}</TooltipContent>
+        <TooltipContent>
+          <Wrapper>{text}</Wrapper>
+        </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );

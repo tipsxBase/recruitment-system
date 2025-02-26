@@ -1,6 +1,5 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -8,7 +7,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "../ui/dialog";
 import {
   Form,
@@ -23,7 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CreateJobDto, createJobSchema } from "@recruitment/schema";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import {
   Select,
   SelectContent,
@@ -33,59 +31,51 @@ import {
 } from "../ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { createJob } from "@/services/JobService";
+import { useJobStore } from "@/providers/job-store-provider";
+import { JobEditorMode } from "@/stores/job-store";
 
-export enum JobEditorMode {
-  Create,
-  Edit,
-}
-
-export interface JobEditorProps {
-  mode: JobEditorMode;
-}
-
-const JobEditor = (props: JobEditorProps) => {
-  const { mode } = props;
-  const [open, setOpen] = useState(false);
+const JobEditor = () => {
+  const mode = useJobStore((store) => store.mode);
+  const currentRow = useJobStore((store) => store.currentRow);
+  const updateMode = useJobStore((store) => store.updateMode);
   const { toast } = useToast();
+
+  const hasInitialValues =
+    mode === JobEditorMode.Edit || mode === JobEditorMode.Copy;
   const form = useForm<CreateJobDto>({
     resolver: zodResolver(createJobSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      status: "active",
-    },
+    defaultValues: hasInitialValues
+      ? {
+          name: currentRow.name,
+          description: currentRow.description,
+          status: currentRow.status,
+        }
+      : {
+          name: "",
+          description: "",
+          status: "active",
+        },
   });
-
   const title = mode === JobEditorMode.Create ? "添加岗位" : "编辑岗位";
 
   const onSubmit = async (values) => {
     createJob(values).then(() => {
       toast({
         variant: "default",
+        title: "提示",
         description: "岗位添加成功",
       });
-      setOpen(false);
+      updateMode(null);
     });
   };
 
-  const onOpenChange = useCallback(
-    (open: boolean) => {
-      setOpen(open);
-      if (!open) {
-        form.reset();
-      }
-    },
-    [form]
-  );
+  const onOpenChange = useCallback(() => {
+    updateMode(null);
+    form.reset();
+  }, [form, updateMode]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus />
-          添加岗位
-        </Button>
-      </DialogTrigger>
+    <Dialog open={!!mode} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

@@ -2,20 +2,63 @@
 import { Column } from "@tanstack/react-table";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ArrowDown, ArrowUp, ArrowUpDown, EyeOff } from "lucide-react";
 
 interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
   title: string;
 }
+
+interface ColumnSorterProps {
+  column: Column<any, any>;
+}
+
+const ColumnSorter = (props: ColumnSorterProps) => {
+  const { column } = props;
+  return (
+    <div className="flex flex-col items-center">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="lucide lucide-chevrons-up-down"
+      >
+        <path
+          d="m7 15 5 5 5-5z"
+          fill={
+            column.getIsSorted() === "desc"
+              ? "hsl(var(--primary))"
+              : "hsl(var(--input))"
+          }
+          stroke={
+            column.getIsSorted() === "desc"
+              ? "hsl(var(--primary))"
+              : "hsl(var(--input))"
+          }
+        />
+        <path
+          d="m7 9 5-5 5 5Z"
+          fill={
+            column.getIsSorted() === "asc"
+              ? "hsl(var(--primary))"
+              : "hsl(var(--input))"
+          }
+          stroke={
+            column.getIsSorted() === "asc"
+              ? "hsl(var(--primary))"
+              : "hsl(var(--input))"
+          }
+        />
+      </svg>
+    </div>
+  );
+};
 
 export function DataTableColumnHeader<TData, TValue>({
   column,
@@ -28,43 +71,15 @@ export function DataTableColumnHeader<TData, TValue>({
 
   return (
     <div className={cn("flex items-center space-x-2", className)}>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8 data-[state=open]:bg-accent"
-          >
-            <span>{title}</span>
-            {column.getIsSorted() === "desc" ? (
-              <ArrowDown className="ml-2 h-4 w-4" />
-            ) : column.getIsSorted() === "asc" ? (
-              <ArrowUp className="ml-2 h-4 w-4" />
-            ) : (
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
-            <ArrowUp className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-            Asc
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
-            <ArrowDown className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-            Desc
-          </DropdownMenuItem>
-          {column.getCanHide() && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
-                <EyeOff className="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
-                Hide
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-ml-3 h-8 data-[state=open]:bg-accent [&_svg]:size-4"
+        onClick={() => column.toggleSorting()}
+      >
+        <span>{title}</span>
+        <ColumnSorter column={column} />
+      </Button>
     </div>
   );
 }
