@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import Confirm from "@/components/confirm";
 
 export const metadata: Metadata = {
   title: "招聘系统",
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={` antialiased`}>
         {children}
+        <Confirm />
         <Toaster />
       </body>
     </html>

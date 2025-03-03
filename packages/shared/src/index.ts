@@ -7,3 +7,5 @@ export { matchPath } from "./matchPath";
 export { formatDate } from "./dayjs";
 
 export * from "./_lodash";
+
+export * from "./is";

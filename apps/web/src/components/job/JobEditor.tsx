@@ -21,7 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CreateJobDto, createJobSchema } from "@recruitment/schema";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -59,20 +59,47 @@ const JobEditor = () => {
   const title = mode === JobEditorMode.Create ? "添加岗位" : "编辑岗位";
 
   const onSubmit = async (values) => {
-    createJob(values).then(() => {
+    if (mode === JobEditorMode.Edit) {
+      // Update job
       toast({
         variant: "default",
-        title: "提示",
-        description: "岗位添加成功",
+        title: "提示2",
+        description: "岗位添加成功2",
       });
-      updateMode(null);
-    });
+      return;
+    } else if (mode === JobEditorMode.Copy) {
+      // Copy job
+      return;
+    } else if (mode === JobEditorMode.Create) {
+      createJob(values).then(() => {
+        toast({
+          variant: "default",
+          title: "提示",
+          description: "岗位添加成功",
+        });
+        updateMode(null);
+      });
+    } else if (mode === JobEditorMode.View) {
+    }
   };
 
   const onOpenChange = useCallback(() => {
     updateMode(null);
     form.reset();
   }, [form, updateMode]);
+
+  useEffect(() => {
+    if (mode === JobEditorMode.Edit || mode === JobEditorMode.Copy) {
+      form.setValue("name", currentRow.name);
+      form.setValue("description", currentRow.description);
+      form.setValue("status", currentRow.status);
+      toast({
+        variant: "default",
+        title: "提示",
+        description: "岗位添加成功",
+      });
+    }
+  }, [currentRow, form, mode]);
 
   return (
     <Dialog open={!!mode} onOpenChange={onOpenChange}>
