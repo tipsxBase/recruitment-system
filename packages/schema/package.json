@@ -1,47 +1,98 @@
 {
   "name": "@recruitment/schema",
   "version": "1.0.0",
-  "description": "",
+  "description": "Zod validation schemas for recruitment system",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    "./auth.schema": {
-      "types": "./dist/auth.schema.d.ts",
-      "import": "./dist/auth.schema.js",
-      "require": "./dist/auth.schema.js"
-    },
-    "./user.schema": {
-      "types": "./dist/user.schema.d.ts",
-      "import": "./dist/user.schema.js",
-      "require": "./dist/user.schema.js"
-    },
-    "./job.schema": {
-      "types": "./dist/job.schema.d.ts",
-      "import": "./dist/job.schema.js",
-      "require": "./dist/job.schema.js"
-    },
-    "./interface": {
-      "types": "./dist/types.d.ts",
-      "import": "./dist/types.js",
-      "require": "./dist/types.js"
-    },
     ".": {
       "types": "./dist/index.d.ts",
       "require": "./dist/index.js",
       "import": "./dist/index.js"
+    },
+    "./auth": {
+      "types": "./dist/auth.schema.d.ts",
+      "import": "./dist/auth.schema.js",
+      "require": "./dist/auth.schema.js"
+    },
+    "./user": {
+      "types": "./dist/user.schema.d.ts",
+      "import": "./dist/user.schema.js",
+      "require": "./dist/user.schema.js"
+    },
+    "./department": {
+      "types": "./dist/department.schema.d.ts",
+      "import": "./dist/department.schema.js",
+      "require": "./dist/department.schema.js"
+    },
+    "./role": {
+      "types": "./dist/role.schema.d.ts",
+      "import": "./dist/role.schema.js",
+      "require": "./dist/role.schema.js"
+    },
+    "./post": {
+      "types": "./dist/post.schema.d.ts",
+      "import": "./dist/post.schema.js",
+      "require": "./dist/post.schema.js"
+    },
+    "./candidate": {
+      "types": "./dist/candidate.schema.d.ts",
+      "import": "./dist/candidate.schema.js",
+      "require": "./dist/candidate.schema.js"
+    },
+    "./assessment": {
+      "types": "./dist/assessment.schema.d.ts",
+      "import": "./dist/assessment.schema.js",
+      "require": "./dist/assessment.schema.js"
+    },
+    "./interview": {
+      "types": "./dist/interview.schema.d.ts",
+      "import": "./dist/interview.schema.js",
+      "require": "./dist/interview.schema.js"
+    },
+    "./notification": {
+      "types": "./dist/notification.schema.d.ts",
+      "import": "./dist/notification.schema.js",
+      "require": "./dist/notification.schema.js"
+    },
+    "./file": {
+      "types": "./dist/file.schema.d.ts",
+      "import": "./dist/file.schema.js",
+      "require": "./dist/file.schema.js"
+    },
+    "./system": {
+      "types": "./dist/system.schema.d.ts",
+      "import": "./dist/system.schema.js",
+      "require": "./dist/system.schema.js"
+    },
+    "./common": {
+      "types": "./dist/common.schema.d.ts",
+      "import": "./dist/common.schema.js",
+      "require": "./dist/common.schema.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup --watch"
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "type-check": "tsc --noEmit"
   },
-  "keywords": [],
+  "keywords": [
+    "zod",
+    "validation",
+    "schema",
+    "typescript",
+    "recruitment"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "zod": "^3.24.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "tsup": "^8.0.0"
+  }
 }

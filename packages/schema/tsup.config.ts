@@ -5,6 +5,10 @@ export default defineConfig({
   splitting: false,
   dts: true,
   sourcemap: false,
-  format: "cjs",
+  format: ["cjs", "esm"],
+  outDir: "dist",
   clean: true,
+  treeshake: true,
+  target: "es2020",
+  minify: false,
 });

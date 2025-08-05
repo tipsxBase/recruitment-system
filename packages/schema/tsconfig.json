@@ -1,25 +1,32 @@
 {
   "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020"],
     "module": "ESNext",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2021",
+    "strict": true,
+    "noEmit": true,
+    "declaration": true,
+    "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": false,
-    "skipLibCheck": true,
+    "rootDir": "./src",
+    "removeComments": false,
+    "noImplicitAny": true,
     "strictNullChecks": true,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false,
-    "moduleResolution": "bundler",
-    "paths": {
-      "@/*": ["src/*"]
-    }
-  }
+    "strictFunctionTypes": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
