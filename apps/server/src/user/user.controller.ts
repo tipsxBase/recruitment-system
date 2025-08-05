@@ -1,20 +1,74 @@
-import { AuthUser } from '@/lib/decorator/auth-user.decorator';
-import { Controller, Get } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Headers,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UserService } from './user.service';
-import { omit } from '@recruitment/shared';
 
-@Controller('/api/user')
+@Controller('users')
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @Get('current')
-  async getCurrentUser(@AuthUser('userId') userId: number) {
-    const user = await this.userService.findOne({ id: userId });
-    return omit(user, 'password');
+  @Get()
+  async findAll(@Headers('x-user-roles') userRoles: string) {
+    // 检查权限：只有管理员可以查看所有用户
+    const roles = JSON.parse(userRoles || '[]');
+    if (!roles.includes('admin')) {
+      throw new UnauthorizedException('没有权限访问');
+    }
+
+    return this.userService.findAll();
   }
 
-  @Get('/menus')
-  async getMenu() {
-    return this.userService.getMenu();
+  @Get(':id')
+  async findById(
+    @Param('id') id: string,
+    @Headers('x-user-id') currentUserId: string,
+    @Headers('x-user-roles') userRoles: string,
+  ) {
+    // 用户只能查看自己的信息，管理员可以查看所有
+    if (id !== currentUserId) {
+      const roles = JSON.parse(userRoles || '[]');
+      if (!roles.includes('admin')) {
+        throw new UnauthorizedException('没有权限访问');
+      }
+    }
+
+    return this.userService.findById(id);
+  }
+
+  @Put(':id')
+  async updateUser(
+    @Param('id') id: string,
+    @Body() updateData: any,
+    @Headers('x-user-id') currentUserId: string,
+    @Headers('x-user-roles') userRoles: string,
+  ) {
+    // 用户只能更新自己的信息，管理员可以更新所有
+    const roles = JSON.parse(userRoles || '[]');
+    if (id !== currentUserId && !roles.includes('admin')) {
+      throw new UnauthorizedException('没有权限访问');
+    }
+
+    return this.userService.updateUser(id, updateData);
+  }
+
+  @Delete(':id')
+  async deleteUser(
+    @Param('id') id: string,
+    @Headers('x-user-roles') userRoles: string,
+  ) {
+    // 只有管理员可以删除用户
+    const roles = JSON.parse(userRoles || '[]');
+    if (!roles.includes('admin')) {
+      throw new UnauthorizedException('没有权限访问');
+    }
+
+    return this.userService.deleteUser(id);
   }
 }

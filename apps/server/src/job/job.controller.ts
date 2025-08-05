@@ -1,64 +1,89 @@
 import {
-  Body,
   Controller,
+  Get,
+  Post,
+  Put,
   Delete,
   Param,
-  Post,
-  UsePipes,
+  Body,
+  Query,
+  Headers,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JobService } from './job.service';
-import { Job as JobModel } from '@prisma/client';
-import { ZodValidationPipe } from '@/lib/pipe/zod-validation.pipe';
-import {
-  CreateJobDto,
-  createJobSchema,
-  QueryJobListPaginationDto,
-  queryJobListPaginationSchema,
-  UpdateJobDto,
-  updateJobSchema,
-} from '@recruitment/schema';
-import { omit } from '@recruitment/shared';
-import { PaginationResult } from '@recruitment/schema';
 
-@Controller('/api/job')
+@Controller('jobs')
 export class JobController {
-  constructor(private readonly jobService: JobService) {}
+  constructor(private jobService: JobService) {}
 
-  @Post('list')
-  @UsePipes(new ZodValidationPipe(queryJobListPaginationSchema))
-  async getJobs(
-    @Body() params: QueryJobListPaginationDto,
-  ): Promise<PaginationResult<JobModel>> {
-    return this.jobService.getJobs(params);
+  @Get()
+  async findAll(
+    @Query('department') department: string,
+    @Headers('x-user-departments') userDepartments: string,
+    @Headers('x-user-roles') userRoles: string,
+  ) {
+    const roles = JSON.parse(userRoles || '[]');
+    const departments = JSON.parse(userDepartments || '[]');
+
+    // 管理员可以查看所有岗位，其他用户只能查看自己部门的岗位
+    let departmentFilter: string[] | undefined;
+
+    if (!roles.includes('admin')) {
+      departmentFilter = departments;
+    }
+
+    return this.jobService.findAll(departmentFilter);
   }
 
-  @Post('active-list')
-  async getActiveJobs(): Promise<JobModel[]> {
-    return this.jobService.getActiveJobs();
+  @Get(':id')
+  async findById(@Param('id') id: string) {
+    return this.jobService.findById(id);
   }
 
-  @Post('create')
-  @UsePipes(new ZodValidationPipe(createJobSchema))
-  async createJob(@Body() job: CreateJobDto): Promise<JobModel> {
-    const { name, description, status } = job;
-    return this.jobService.createJob({
-      name,
-      description,
-      status,
-    });
+  @Post()
+  async createJob(
+    @Body() jobData: any,
+    @Headers('x-user-id') userId: string,
+    @Headers('x-user-roles') userRoles: string,
+  ) {
+    const roles = JSON.parse(userRoles || '[]');
+
+    // 只有 HR 和管理员可以创建岗位
+    if (!roles.includes('admin') && !roles.includes('hr')) {
+      throw new UnauthorizedException('没有权限创建岗位');
+    }
+
+    return this.jobService.createJob(jobData, userId);
   }
 
-  @Post('update')
-  @UsePipes(new ZodValidationPipe(updateJobSchema))
-  async updateJob(@Body() job: UpdateJobDto): Promise<JobModel> {
-    return this.jobService.updateJob({
-      where: { id: job.id },
-      job: omit(job, 'id'),
-    });
+  @Put(':id')
+  async updateJob(
+    @Param('id') id: string,
+    @Body() updateData: any,
+    @Headers('x-user-roles') userRoles: string,
+  ) {
+    const roles = JSON.parse(userRoles || '[]');
+
+    // 只有 HR 和管理员可以编辑岗位
+    if (!roles.includes('admin') && !roles.includes('hr')) {
+      throw new UnauthorizedException('没有权限编辑岗位');
+    }
+
+    return this.jobService.updateJob(id, updateData);
   }
 
-  @Delete('delete/:id')
-  async deleteJob(@Param('id') id: string): Promise<JobModel> {
-    return this.jobService.deleteJob({ id });
+  @Delete(':id')
+  async deleteJob(
+    @Param('id') id: string,
+    @Headers('x-user-roles') userRoles: string,
+  ) {
+    const roles = JSON.parse(userRoles || '[]');
+
+    // 只有管理员可以删除岗位
+    if (!roles.includes('admin')) {
+      throw new UnauthorizedException('没有权限删除岗位');
+    }
+
+    return this.jobService.deleteJob(id);
   }
 }

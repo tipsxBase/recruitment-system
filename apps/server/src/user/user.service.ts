@@ -1,41 +1,55 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { UserDto } from '@recruitment/schema';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async create(params: any) {
-    return { id: 1, ...params };
-  }
-
-  async update(id: number, params: any) {
-    return { id, ...params };
-  }
-
-  async delete(id: number) {
-    return { id };
-  }
-
-  async findOne(params: UserDto) {
-    return this.prisma.user.findUnique({
-      where: params as any,
+  async findAll() {
+    return this.prisma.user.findMany({
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+        departments: {
+          include: {
+            department: true,
+          },
+        },
+      },
     });
   }
 
-  async findAll() {
-    return [{ id: 1 }, { id: 2 }];
+  async findById(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+        departments: {
+          include: {
+            department: true,
+          },
+        },
+      },
+    });
   }
 
-  async getMenu() {
-    return this.prisma.menu.findMany({
-      where: {
-        parentId: null,
-      },
-      include: {
-        children: true,
-      },
+  async updateUser(id: string, data: any) {
+    return this.prisma.user.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteUser(id: string) {
+    return this.prisma.user.delete({
+      where: { id },
     });
   }
 }

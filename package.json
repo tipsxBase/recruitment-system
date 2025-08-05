@@ -6,10 +6,20 @@
   "scripts": {
     "web:dev": "pnpm --filter @recruitment/web run dev",
     "server:dev": "pnpm --filter @recruitment/server run start:dev",
+    "gateway:dev": "pnpm --filter @recruitment/gateway run start:dev",
     "build:shared": "pnpm --filter @recruitment/shared run build",
     "build:schema": "pnpm --filter @recruitment/schema run build",
-    "dev": "run-p web:dev server:dev",
-    "build": "run-p build:shared build:schema"
+    "dev": "run-p gateway:dev server:dev web:dev",
+    "dev:services": "run-p gateway:dev server:dev",
+    "start:dev": "pnpm gateway:dev",
+    "build": "run-p build:shared build:schema",
+    "install:all": "pnpm install && pnpm --filter @recruitment/gateway install && pnpm --filter @recruitment/server install && pnpm --filter @recruitment/web install",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "prisma:generate": "pnpm --filter @recruitment/server run prisma:generate",
+    "prisma:migrate": "pnpm --filter @recruitment/server run prisma:migrate:dev",
+    "prisma:studio": "pnpm --filter @recruitment/server run prisma:studio"
   },
   "keywords": [],
   "author": "",

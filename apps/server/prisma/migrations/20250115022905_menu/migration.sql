@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "Menu" ALTER COLUMN "path" DROP NOT NULL;

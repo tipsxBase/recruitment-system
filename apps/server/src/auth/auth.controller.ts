@@ -1,29 +1,55 @@
-import { Body, Controller, Get, Post, Res, UsePipes } from '@nestjs/common';
-import { ZodValidationPipe } from '@/lib/pipe/zod-validation.pipe';
-import { SignInbDto, signInSchema } from '@recruitment/schema';
+import { RegisterDto } from './../../../../packages/schema/src/auth.schema';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Headers,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { Response } from 'express';
-import { Public } from '@/lib/decorator/public.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Public()
-  @Post('login')
-  @UsePipes(new ZodValidationPipe(signInSchema))
-  async signIn(
-    @Body() params: SignInbDto,
-    @Res({ passthrough: true }) res: Response,
+  @Post('validate')
+  async validateUser(
+    @Body() { email, password }: { email: string; password: string },
   ) {
-    const accessToken = await this.authService.signIn(params);
-    res.cookie('token', accessToken);
-    return { accessToken };
+    const user = await this.authService.validateUser(email, password);
+
+    if (!user) {
+      throw new UnauthorizedException('邮箱或密码错误');
+    }
+
+    return user;
   }
 
-  @Public()
-  @Post('validate-token')
-  async validateToken(@Body() params: { token: string }) {
-    return this.authService.validateToken(params.token);
+  @Post('register')
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
+  }
+
+  @Get('me')
+  async getCurrentUser(@Headers('x-user-id') userId: string) {
+    if (!userId) {
+      throw new UnauthorizedException('用户未认证');
+    }
+
+    const user = await this.authService.getUserById(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('用户不存在');
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      roles: user.roles.map((ur) => ur.role.name),
+      departments: user.departments.map((ud) => ud.department.name),
+      isActive: user.isActive,
+    };
   }
 }
