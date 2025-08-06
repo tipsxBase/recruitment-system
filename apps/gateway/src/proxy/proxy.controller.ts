@@ -10,6 +10,7 @@ import {
 import { Request, Response } from "express";
 import { ThrottlerGuard } from "@nestjs/throttler";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { ApiPermissionGuard } from "../auth/guards/api-permission.guard";
 import { ProxyService } from "./proxy.service";
 
 @Controller()
@@ -23,9 +24,9 @@ export class ProxyController {
     return this.proxyService.healthCheck();
   }
 
-  // 代理所有其他请求到业务服务，需要JWT认证
+  // 代理所有其他请求到业务服务，使用集中的权限验证
   @All("*")
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, ApiPermissionGuard)
   async proxyToServer(@Req() req: Request, @Res() res: Response) {
     try {
       // 提取路径，去除 /api 前缀

@@ -1,11 +1,19 @@
-import { Injectable, HttpException, HttpStatus } from "@nestjs/common";
+import { Injectable, HttpException, HttpStatus, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import {
+  PermissionService,
+  UserInfo,
+} from "../auth/permissions/permission.service";
 
 @Injectable()
 export class ProxyService {
+  private readonly logger = new Logger(ProxyService.name);
   private readonly serverBaseUrl: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private permissionService: PermissionService
+  ) {
     this.serverBaseUrl = this.configService.get<string>(
       "SERVER_BASE_URL",
       "http://localhost:8090"
@@ -21,6 +29,45 @@ export class ProxyService {
     user?: any
   ): Promise<any> {
     try {
+      // 构造用户信息
+      const userInfo: UserInfo | undefined = user
+        ? {
+            id: user.sub || user.id,
+            email: user.email,
+            roles: user.roles || [],
+            permissions: user.permissions || [],
+            departments: user.departments || [],
+          }
+        : undefined;
+
+      // 执行权限检查
+      const permissionCheck = this.permissionService.checkPermission(
+        path,
+        method,
+        userInfo
+      );
+
+      if (!permissionCheck.allowed) {
+        this.logger.warn(`Permission denied for ${method} ${path}`, {
+          userId: userInfo?.id,
+          reason: permissionCheck.reason,
+        });
+
+        throw new HttpException(
+          {
+            message: "权限不足",
+            error: "Forbidden",
+            reason: permissionCheck.reason,
+          },
+          HttpStatus.FORBIDDEN
+        );
+      }
+
+      this.logger.debug(`Permission granted for ${method} ${path}`, {
+        userId: userInfo?.id,
+        reason: permissionCheck.reason,
+      });
+
       const url = new URL(`${this.serverBaseUrl}${path}`);
 
       // 添加查询参数
@@ -42,6 +89,9 @@ export class ProxyService {
         requestHeaders["X-User-Roles"] = JSON.stringify(user.roles || []);
         requestHeaders["X-User-Departments"] = JSON.stringify(
           user.departments || []
+        );
+        requestHeaders["X-User-Permissions"] = JSON.stringify(
+          user.permissions || []
         );
       }
 
@@ -82,7 +132,7 @@ export class ProxyService {
         return await response.text();
       }
     } catch (error) {
-      console.error("Proxy request failed:", error);
+      this.logger.error("Proxy request failed:", error);
 
       if (error instanceof HttpException) {
         throw error;
