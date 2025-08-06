@@ -1,8 +1,11 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { PrismaClient } from '@recruitment/database';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   constructor() {
     super({
       log: [
@@ -10,10 +13,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
           level: 'query', // 捕获 SQL 查询
           emit: 'stdout', // 输出到标准输出
         },
-        {
-          level: 'info', // 捕获信息
-          emit: 'stdout', // 输出到标准输出
-        },
+        // 注释掉 info 级别日志以减少输出
+        // {
+        //   level: 'info', // 捕获信息
+        //   emit: 'stdout', // 输出到标准输出
+        // },
         {
           level: 'warn', // 捕获警告
           emit: 'stdout', // 输出到标准输出
@@ -25,7 +29,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       ],
     });
   }
+
   async onModuleInit() {
     await this.$connect();
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
   }
 }

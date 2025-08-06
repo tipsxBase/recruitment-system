@@ -175,9 +175,9 @@ importers:
       '@nestjs/platform-express':
         specifier: ^10.0.0
         version: 10.4.20(@nestjs/common@10.4.20)(@nestjs/core@10.4.20)
-      '@prisma/client':
-        specifier: ^6.1.0
-        version: 6.13.0(prisma@6.13.0)(typescript@5.8.3)
+      '@recruitment/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@recruitment/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -193,9 +193,6 @@ importers:
       class-validator:
         specifier: ^0.14.1
         version: 0.14.2
-      prisma:
-        specifier: ^6.1.0
-        version: 6.13.0(typescript@5.8.3)
       reflect-metadata:
         specifier: ^0.2.0
         version: 0.2.2
@@ -2256,23 +2253,6 @@ packages:
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
     dev: true
-
-  /@prisma/client@6.13.0(prisma@6.13.0)(typescript@5.8.3):
-    resolution: {integrity: sha512-8m2+I3dQovkV8CkDMluiwEV1TxV9EXdT6xaCz39O6jYw7mkf5gwfmi+cL4LJsEPwz5tG7sreBwkRpEMJedGYUQ==}
-    engines: {node: '>=18.18'}
-    requiresBuild: true
-    peerDependencies:
-      prisma: '*'
-      typescript: '>=5.1.0'
-    peerDependenciesMeta:
-      prisma:
-        optional: true
-      typescript:
-        optional: true
-    dependencies:
-      prisma: 6.13.0(typescript@5.8.3)
-      typescript: 5.8.3
-    dev: false
 
   /@prisma/client@6.13.0(prisma@6.13.0)(typescript@5.9.2):
     resolution: {integrity: sha512-8m2+I3dQovkV8CkDMluiwEV1TxV9EXdT6xaCz39O6jYw7mkf5gwfmi+cL4LJsEPwz5tG7sreBwkRpEMJedGYUQ==}
@@ -8984,24 +8964,6 @@ packages:
       react-is: 18.3.1
     dev: true
 
-  /prisma@6.13.0(typescript@5.8.3):
-    resolution: {integrity: sha512-dfzORf0AbcEyyzxuv2lEwG8g+WRGF/qDQTpHf/6JoHsyF5MyzCEZwClVaEmw3WXcobgadosOboKUgQU0kFs9kw==}
-    engines: {node: '>=18.18'}
-    hasBin: true
-    requiresBuild: true
-    peerDependencies:
-      typescript: '>=5.1.0'
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-    dependencies:
-      '@prisma/config': 6.13.0
-      '@prisma/engines': 6.13.0
-      typescript: 5.8.3
-    transitivePeerDependencies:
-      - magicast
-    dev: false
-
   /prisma@6.13.0(typescript@5.9.2):
     resolution: {integrity: sha512-dfzORf0AbcEyyzxuv2lEwG8g+WRGF/qDQTpHf/6JoHsyF5MyzCEZwClVaEmw3WXcobgadosOboKUgQU0kFs9kw==}
     engines: {node: '>=18.18'}
@@ -10584,6 +10546,7 @@ packages:
     resolution: {integrity: sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==}
     engines: {node: '>=14.17'}
     hasBin: true
+    dev: true
 
   /typescript@5.9.2:
     resolution: {integrity: sha512-CWBzXQrc/qOkhidw1OzBTQuYRbfyxDXJMVJ1XNwUHGROVmuaeiEm3OslpZ1RV96d7SKKjZKrSJu3+t/xlw3R9A==}

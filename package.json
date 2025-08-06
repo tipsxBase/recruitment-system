@@ -9,6 +9,7 @@
     "gateway:dev": "pnpm --filter @recruitment/gateway run start:dev",
     "build:shared": "pnpm --filter @recruitment/shared run build",
     "build:schema": "pnpm --filter @recruitment/schema run build",
+    "build:database": "pnpm --filter @recruitment/database run build",
     "dev": "run-p gateway:dev server:dev web:dev",
     "dev:services": "run-p gateway:dev server:dev",
     "start:dev": "pnpm gateway:dev",
