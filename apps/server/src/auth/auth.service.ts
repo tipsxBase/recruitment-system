@@ -1,13 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import {
-  type LoginRequest,
   type RegisterRequest,
   type ForgotPasswordRequest,
   type ResetPasswordRequest,
   type ChangePasswordRequest,
   type UpdateProfileRequest,
-  type LoginResponse,
   type RegisterResponse,
   type ForgotPasswordResponse,
   type ResetPasswordResponse,
@@ -22,105 +20,6 @@ export class AuthService {
   constructor(private prisma: PrismaService) {}
 
   /**
-   * 验证用户登录凭据
-   * 业务逻辑：
-   * 1. 根据用户名查找用户
-   * 2. 验证密码是否正确
-   * 3. 检查用户状态是否正常
-   * 4. 返回用户信息用于生成 token
-   */
-  async validateUser(username: string, password: string): Promise<any> {
-    // Mock 验证逻辑
-    console.log('验证用户凭据:', { username, password });
-
-    // 实际业务逻辑：
-    // const user = await this.prisma.user.findFirst({
-    //   where: {
-    //     OR: [
-    //       { username },
-    //       { email: username }
-    //     ]
-    //   },
-    //   include: {
-    //     department: true,
-    //     roles: {
-    //       include: {
-    //         permissions: true
-    //       }
-    //     }
-    //   }
-    // });
-
-    // if (!user || !bcrypt.compareSync(password, user.password)) {
-    //   return null;
-    // }
-
-    return {
-      id: '550e8400-e29b-41d4-a716-446655440000',
-      username,
-      email: 'user@example.com',
-      name: '测试用户',
-      roles: ['user'],
-      departments: ['tech'],
-      isActive: true,
-    };
-  }
-
-  /**
-   * 用户登录
-   * 业务逻辑：
-   * 1. 验证用户凭据
-   * 2. 更新最后登录时间
-   * 3. 记录登录日志
-   * 4. 返回用户信息
-   */
-  async login(loginDto: LoginRequest): Promise<LoginResponse> {
-    console.log('用户登录:', loginDto);
-
-    // 实际业务逻辑：
-    // 1. 验证用户名和密码
-    // 2. 更新最后登录时间
-    // 3. 记录登录日志
-    // 4. 返回完整用户信息
-
-    const mockResponse: LoginResponse = {
-      user: {
-        id: '550e8400-e29b-41d4-a716-446655440000',
-        username: loginDto.username,
-        email: 'user@example.com',
-        emailVerified: true,
-        employeeNo: 'EMP001',
-        phone: '13812345678',
-        status: 'ACTIVE',
-        department: {
-          id: 'dept-001',
-          name: '技术部',
-          parent: {
-            id: 'dept-parent',
-            name: '研发中心',
-          },
-        },
-        roles: [
-          {
-            id: 'role-001',
-            name: '开发者',
-            code: 'developer',
-            description: '软件开发人员',
-          },
-        ],
-        permissions: ['user:read', 'post:read', 'candidate:read'],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      token: 'jwt_token_here',
-      refreshToken: 'refresh_token_here',
-      expiresIn: 3600,
-    };
-
-    return mockResponse;
-  }
-
-  /**
    * 用户注册
    * 业务逻辑：
    * 1. 验证用户名和邮箱是否已存在
@@ -128,6 +27,8 @@ export class AuthService {
    * 3. 创建新用户（密码加密）
    * 4. 发送激活邮件
    * 5. 返回注册结果
+   *
+   * 注意：这是业务逻辑层，认证和授权由 Gateway 处理
    */
   async register(registerDto: RegisterRequest): Promise<RegisterResponse> {
     console.log('用户注册:', registerDto);
@@ -239,6 +140,8 @@ export class AuthService {
    * 3. 更新用户密码
    * 4. 记录密码更改日志
    * 5. 可选：强制重新登录所有设备
+   *
+   * 注意：用户ID从 Gateway 通过请求头传递过来
    */
   async changePassword(
     userId: string,
@@ -269,6 +172,8 @@ export class AuthService {
    * 3. 更新用户信息
    * 4. 如果邮箱变更，需要重新验证
    * 5. 记录信息更改日志
+   *
+   * 注意：用户ID从 Gateway 通过请求头传递过来
    */
   async updateProfile(
     userId: string,
@@ -323,6 +228,8 @@ export class AuthService {
    * 2. 包含关联的部门和角色信息
    * 3. 计算用户权限列表
    * 4. 返回完整的用户信息
+   *
+   * 注意：用户ID从 Gateway 通过请求头传递过来
    */
   async getUserById(userId: string): Promise<GetCurrentUserResponse> {
     console.log('获取用户信息:', userId);

@@ -33,8 +33,8 @@ import { HealthModule } from "./health/health.module";
     ]),
 
     AuthModule,
-    ProxyModule,
     HealthModule,
+    ProxyModule,
   ],
   controllers: [],
   providers: [],

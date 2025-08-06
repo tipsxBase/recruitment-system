@@ -1,5 +1,4 @@
 import { NestFactory } from "@nestjs/core";
-import { ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module";
 import helmet from "helmet";
 
@@ -30,11 +29,15 @@ async function bootstrap() {
   // 全局路由前缀
   app.setGlobalPrefix("api");
 
-  const port = process.env.GATEWAY_PORT || 8080;
+  // 环境变量配置
+  const port = parseInt(process.env.GATEWAY_PORT) || 8080;
+  const nodeEnv = process.env.NODE_ENV || "development";
+
   await app.listen(port);
 
   console.log(`🚀 Gateway server is running on port ${port}`);
   console.log(`📋 API Gateway URL: http://localhost:${port}/api`);
+  console.log(`🌍 Environment: ${nodeEnv}`);
 }
 
 bootstrap();

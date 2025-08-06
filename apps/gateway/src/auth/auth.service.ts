@@ -103,7 +103,7 @@ export class AuthService {
         },
         body: JSON.stringify(loginDto),
       });
-
+      console.log("login response", response);
       if (!response.ok) {
         throw new UnauthorizedException("用户名或密码错误");
       }
