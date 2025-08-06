@@ -20,7 +20,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup --watch"
+    "build:watch": "tsup --watch",
+    "build": "tsup"
   },
   "keywords": [],
   "author": "",

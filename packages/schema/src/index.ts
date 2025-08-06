@@ -1,15 +1,15 @@
 export * from "zod";
 
 // 导出所有schema模块
-export * from "./common.schema.js";
-export * from "./auth.schema.js";
-export * from "./user.schema.js";
-export * from "./department.schema.js";
-export * from "./role.schema.js";
-export * from "./post.schema.js";
-export * from "./candidate.schema.js";
-export * from "./assessment.schema.js";
-export * from "./interview.schema.js";
-export * from "./notification.schema.js";
-export * from "./file.schema.js";
-export * from "./system.schema.js";
+export * from "./common.schema";
+export * from "./auth.schema";
+export * from "./user.schema";
+export * from "./department.schema";
+export * from "./role.schema";
+export * from "./post.schema";
+export * from "./candidate.schema";
+export * from "./assessment.schema";
+export * from "./interview.schema";
+export * from "./notification.schema";
+export * from "./file.schema";
+export * from "./system.schema";
