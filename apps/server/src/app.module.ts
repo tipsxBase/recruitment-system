@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from './prisma.service';
-import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CandidatesModule } from './candidates/candidates.module';
 import { PostsModule } from './posts/posts.module';
@@ -19,7 +18,6 @@ import { SystemModule } from './system/system.module';
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
     }),
-    AuthModule,
     UsersModule,
     CandidatesModule,
     PostsModule,
