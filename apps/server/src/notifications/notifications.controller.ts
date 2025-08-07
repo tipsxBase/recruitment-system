@@ -91,10 +91,23 @@ export class NotificationsController {
     return this.notificationsService.deleteNotification(id, currentUser);
   }
 
-  @Patch(':id/read')
+  @Put(':id/read')
   async markAsRead(@Param('id') id: string, @Headers() headers: any) {
     const currentUser = this.extractUserFromHeaders(headers);
     return this.notificationsService.markAsRead(id, currentUser);
+  }
+
+  @Put('batch-read')
+  async batchMarkAsRead(
+    @Body() batchMarkDto: BatchMarkReadRequest,
+    @Headers() headers: any,
+  ) {
+    const currentUser = this.extractUserFromHeaders(headers);
+    const validatedData = BatchMarkReadRequestSchema.parse(batchMarkDto);
+    return this.notificationsService.batchMarkAsRead(
+      validatedData,
+      currentUser,
+    );
   }
 
   @Patch('read-all')

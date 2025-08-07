@@ -16,6 +16,9 @@ import {
   type ResetUserPasswordResponse,
   type ExportUsersResponse,
   type GetUserDetailResponse,
+  type CheckPermissionRequest,
+  type CheckPermissionResponse,
+  type GetUserMenuResponse,
 } from '@recruitment/schema';
 
 @Injectable()
@@ -392,5 +395,122 @@ export class UsersService {
     };
 
     return mockResponse;
+  }
+
+  /**
+   * 获取用户菜单
+   * 业务逻辑：
+   * 1. 根据用户角色获取权限列表
+   * 2. 筛选出菜单类型的权限
+   * 3. 构建树形菜单结构
+   * 4. 返回菜单和按钮权限
+   */
+  async getUserMenu(currentUser: any): Promise<GetUserMenuResponse> {
+    console.log('获取用户菜单:', { currentUser });
+
+    // 模拟实现 - 实际应该从数据库查询用户权限
+    const mockMenus = [
+      {
+        id: 'dashboard',
+        name: '首页',
+        code: 'DASHBOARD',
+        type: 'MENU' as const,
+        path: '/dashboard',
+        icon: 'home',
+        sort: 1,
+        hidden: false,
+        children: [],
+      },
+      {
+        id: 'system',
+        name: '系统管理',
+        code: 'SYSTEM',
+        type: 'MENU' as const,
+        path: '/system',
+        icon: 'setting',
+        sort: 2,
+        hidden: false,
+        children: [
+          {
+            id: 'users',
+            name: '用户管理',
+            code: 'USER_MANAGE',
+            type: 'MENU' as const,
+            path: '/system/users',
+            icon: 'user',
+            sort: 1,
+            hidden: false,
+            children: [
+              {
+                id: 'user-create',
+                name: '新增用户',
+                code: 'USER_CREATE',
+                type: 'BUTTON' as const,
+                sort: 1,
+                hidden: false,
+              },
+            ],
+          },
+          {
+            id: 'departments',
+            name: '部门管理',
+            code: 'DEPT_MANAGE',
+            type: 'MENU' as const,
+            path: '/system/departments',
+            icon: 'apartment',
+            sort: 2,
+            hidden: false,
+          },
+        ],
+      },
+    ];
+
+    const mockButtons = [
+      'USER_CREATE',
+      'USER_EDIT',
+      'USER_DELETE',
+      'DEPT_CREATE',
+      'DEPT_EDIT',
+      'POST_CREATE',
+      'POST_EDIT',
+      'CANDIDATE_CREATE',
+    ];
+
+    return {
+      menus: mockMenus,
+      buttons: mockButtons,
+    };
+  }
+
+  /**
+   * 检查用户权限
+   * 业务逻辑：
+   * 1. 获取用户的所有权限
+   * 2. 检查每个权限编码是否在用户权限列表中
+   * 3. 返回权限检查结果映射
+   */
+  async checkPermission(
+    checkData: CheckPermissionRequest,
+    currentUser: any,
+  ): Promise<CheckPermissionResponse> {
+    console.log('检查用户权限:', { checkData, currentUser });
+
+    // 模拟实现 - 实际应该从数据库查询用户权限
+    const userPermissions = [
+      'DASHBOARD',
+      'USER_MANAGE',
+      'USER_CREATE',
+      'USER_EDIT',
+      'DEPT_MANAGE',
+      'DEPT_CREATE',
+    ];
+
+    const permissions: Record<string, boolean> = {};
+
+    checkData.permissionCodes.forEach((code) => {
+      permissions[code] = userPermissions.includes(code);
+    });
+
+    return { permissions };
   }
 }

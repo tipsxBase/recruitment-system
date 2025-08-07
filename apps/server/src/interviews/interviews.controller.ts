@@ -61,6 +61,12 @@ export class InterviewsController {
     );
   }
 
+  @Get('my')
+  async getMyInterviews(@Query() query: any, @Headers() headers: any) {
+    const currentUser = this.extractUserFromHeaders(headers);
+    return this.interviewsService.getMyInterviews(query, currentUser);
+  }
+
   @Get(':id')
   async getInterviewById(@Param('id') id: string, @Headers() headers: any) {
     const currentUser = this.extractUserFromHeaders(headers);
@@ -136,6 +142,29 @@ export class InterviewsController {
   async completeInterview(@Param('id') id: string, @Headers() headers: any) {
     const currentUser = this.extractUserFromHeaders(headers);
     return this.interviewsService.completeInterview(id, currentUser);
+  }
+
+  @Post('tasks/:taskId/start')
+  async startInterviewTask(
+    @Param('taskId') taskId: string,
+    @Headers() headers: any,
+  ) {
+    const currentUser = this.extractUserFromHeaders(headers);
+    return this.interviewsService.startInterviewTask(taskId, currentUser);
+  }
+
+  @Post('tasks/:taskId/feedback')
+  async submitInterviewFeedback(
+    @Param('taskId') taskId: string,
+    @Body() feedbackDto: any,
+    @Headers() headers: any,
+  ) {
+    const currentUser = this.extractUserFromHeaders(headers);
+    return this.interviewsService.submitInterviewFeedback(
+      taskId,
+      feedbackDto,
+      currentUser,
+    );
   }
 
   private extractUserFromHeaders(headers: any) {

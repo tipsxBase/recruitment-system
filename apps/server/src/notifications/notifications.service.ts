@@ -41,6 +41,15 @@ export class NotificationsService {
     return { id, isRead: true };
   }
 
+  async batchMarkAsRead(data: any, currentUser: any) {
+    console.log('批量标记通知为已读', { data, currentUserId: currentUser.id });
+
+    // 模拟实现 - 实际应该批量更新数据库中的通知状态
+    const updatedCount = data.notificationIds ? data.notificationIds.length : 0;
+
+    return { updatedCount };
+  }
+
   async markAllAsRead(currentUser: any) {
     console.log('标记所有通知为已读', { currentUserId: currentUser.id });
     return { count: 0 };

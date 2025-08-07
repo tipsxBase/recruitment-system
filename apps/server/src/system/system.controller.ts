@@ -38,10 +38,22 @@ export class SystemController {
     return this.systemService.getSystemMetrics(currentUser);
   }
 
+  @Get('dashboard')
+  async getDashboard(@Headers() headers: any) {
+    const currentUser = this.extractUserFromHeaders(headers);
+    return this.systemService.getDashboard(currentUser);
+  }
+
   @Get('logs')
   async getSystemLogs(@Query() query: any, @Headers() headers: any) {
     const currentUser = this.extractUserFromHeaders(headers);
     return this.systemService.getSystemLogs(query, currentUser);
+  }
+
+  @Post('export')
+  async exportData(@Body() exportDto: any, @Headers() headers: any) {
+    const currentUser = this.extractUserFromHeaders(headers);
+    return this.systemService.exportData(exportDto, currentUser);
   }
 
   @Put('config')

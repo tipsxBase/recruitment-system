@@ -133,17 +133,14 @@ export const GetUserMenuResponseSchema = z.object({
   buttons: z.array(z.string()),
 });
 
-// 检查权限请求
+// 检查权限请求 - 按照API设计文档
 export const CheckPermissionRequestSchema = z.object({
-  permission: z.string(),
-  resource: z.string().optional(),
-  action: z.string().optional(),
+  permissionCodes: z.array(z.string()).min(1, "权限编码列表不能为空"),
 });
 
-// 检查权限响应
+// 检查权限响应 - 按照API设计文档
 export const CheckPermissionResponseSchema = z.object({
-  hasPermission: z.boolean(),
-  reason: z.string().optional(),
+  permissions: z.record(z.string(), z.boolean()), // 权限编码 -> 是否有权限的映射
 });
 
 // 权限申请请求

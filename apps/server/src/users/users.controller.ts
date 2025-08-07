@@ -29,6 +29,10 @@ import {
   type ResetUserPasswordRequest,
   type ExportUsersRequest,
 } from '@recruitment/schema';
+import {
+  CheckPermissionRequestSchema,
+  type CheckPermissionRequest,
+} from '@recruitment/schema';
 
 @Controller('users')
 export class UsersController {
@@ -167,6 +171,32 @@ export class UsersController {
     const validatedData = ExportUsersRequestSchema.parse(exportDto);
 
     return this.usersService.exportUsers(validatedData, currentUser);
+  }
+
+  /**
+   * 获取用户菜单
+   */
+  @Get('menu')
+  async getUserMenu(@Headers() headers: any) {
+    const currentUser = this.extractUserFromHeaders(headers);
+    return this.usersService.getUserMenu(currentUser);
+  }
+
+  /**
+   * 检查用户权限
+   */
+  @Post('check-permission')
+  async checkPermission(
+    @Body() checkPermissionDto: CheckPermissionRequest,
+    @Headers() headers: any,
+  ) {
+    const currentUser = this.extractUserFromHeaders(headers);
+
+    // 验证请求数据
+    const validatedData =
+      CheckPermissionRequestSchema.parse(checkPermissionDto);
+
+    return this.usersService.checkPermission(validatedData, currentUser);
   }
 
   /**

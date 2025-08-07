@@ -24,6 +24,7 @@ import {
   RefreshTokenRequestSchema,
   ChangePasswordRequestSchema,
   UpdateProfileRequestSchema,
+  ActivateRequestSchema,
   type LoginRequest,
   type RegisterRequest,
   type ForgotPasswordRequest,
@@ -31,6 +32,7 @@ import {
   type RefreshTokenRequest,
   type ChangePasswordRequest,
   type UpdateProfileRequest,
+  type ActivateRequest,
 } from "@recruitment/schema";
 import { ZodValidation } from "../common/pipes/zod-validation.pipe";
 
@@ -53,10 +55,11 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
-  @Post("activate/:token")
+  @Post("activate")
   @HttpCode(HttpStatus.OK)
-  async activate(@Param("token") token: string) {
-    return this.authService.activate(token);
+  @UsePipes(ZodValidation(ActivateRequestSchema))
+  async activate(@Body() activateDto: ActivateRequest) {
+    return this.authService.activate(activateDto.token);
   }
 
   @Post("forgot-password")
@@ -73,7 +76,7 @@ export class AuthController {
     return this.authService.resetPassword(resetPasswordDto);
   }
 
-  @Post("refresh-token")
+  @Post("refresh")
   @HttpCode(HttpStatus.OK)
   @UsePipes(ZodValidation(RefreshTokenRequestSchema))
   async refreshToken(@Body() refreshTokenDto: RefreshTokenRequest) {
@@ -81,7 +84,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get("profile")
+  @Get("me")
   async getProfile(@Request() req: any) {
     return this.authService.getCurrentUser(req.user.id);
   }
