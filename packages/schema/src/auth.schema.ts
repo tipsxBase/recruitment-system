@@ -45,7 +45,23 @@ export const RegisterResponseSchema = z.object({
 
 // 登录请求
 export const LoginRequestSchema = z.object({
-  username: z.string().min(1, "用户名不能为空"),
+  username: z
+    .string()
+    .min(1, "用户名或邮箱不能为空")
+    .min(3, "输入内容至少3位")
+    .max(50, "输入内容过长")
+    .refine((value) => {
+      // 检查是否是邮箱格式
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (emailRegex.test(value)) {
+        return true; // 邮箱格式有效
+      }
+      // 检查是否是用户名格式
+      if (/^[a-zA-Z0-9_]+$/.test(value)) {
+        return true; // 用户名格式有效
+      }
+      return false;
+    }, "请输入有效的用户名或邮箱地址"),
   password: z.string().min(1, "密码不能为空"),
   rememberMe: z.boolean().optional().default(false),
 });
