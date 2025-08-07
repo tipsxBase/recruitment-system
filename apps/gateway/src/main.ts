@@ -1,6 +1,7 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import helmet from "helmet";
+import * as cookieParser from "cookie-parser";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -9,6 +10,9 @@ async function bootstrap() {
 
   // 安全配置
   app.use(helmet());
+
+  // 配置 Cookie Parser
+  app.use(cookieParser());
 
   // 启用 CORS
   app.enableCors({

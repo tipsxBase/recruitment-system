@@ -11,7 +11,10 @@ import {
   Patch,
   Param,
   UsePipes,
+  Res,
+  UnauthorizedException,
 } from "@nestjs/common";
+import { Response } from "express";
 import { ThrottlerGuard } from "@nestjs/throttler";
 import { AuthService } from "./auth.service";
 import { LocalAuthGuard } from "./guards/local-auth.guard";
@@ -35,6 +38,7 @@ import {
   type ActivateRequest,
 } from "@recruitment/schema";
 import { ZodValidation } from "../common/pipes/zod-validation.pipe";
+import { CookieUtils } from "./utils/cookie.utils";
 
 @Controller("auth")
 @UseGuards(ThrottlerGuard)
@@ -44,8 +48,29 @@ export class AuthController {
   @Post("login")
   @HttpCode(HttpStatus.OK)
   @UsePipes(ZodValidation(LoginRequestSchema))
-  async login(@Body() loginDto: LoginRequest) {
-    return this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginRequest,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const result = await this.authService.login(loginDto);
+
+    // 设置 JWT token 到 cookie
+    res.cookie(
+      CookieUtils.ACCESS_TOKEN_COOKIE,
+      result.token,
+      CookieUtils.getAccessTokenCookieOptions(result.expiresIn)
+    );
+
+    // 设置 refresh token 到 cookie
+    res.cookie(
+      CookieUtils.REFRESH_TOKEN_COOKIE,
+      result.refreshToken,
+      CookieUtils.getRefreshTokenCookieOptions()
+    );
+
+    // 返回响应，但不包含 token（因为已经在 cookie 中）
+    const { token, refreshToken, ...response } = result;
+    return response;
   }
 
   @Post("register")
@@ -78,15 +103,42 @@ export class AuthController {
 
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
-  @UsePipes(ZodValidation(RefreshTokenRequestSchema))
-  async refreshToken(@Body() refreshTokenDto: RefreshTokenRequest) {
-    return this.authService.refreshToken(refreshTokenDto);
+  async refreshToken(
+    @Request() req: any,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    // 从 cookie 中获取 refresh token，如果没有则从 body 中获取
+    const refreshToken =
+      req.cookies?.[CookieUtils.REFRESH_TOKEN_COOKIE] || req.body?.refreshToken;
+
+    if (!refreshToken) {
+      throw new UnauthorizedException("Refresh token not found");
+    }
+
+    const result = await this.authService.refreshToken({ refreshToken });
+
+    // 更新 cookie 中的 token
+    res.cookie(
+      CookieUtils.ACCESS_TOKEN_COOKIE,
+      result.token,
+      CookieUtils.getAccessTokenCookieOptions(result.expiresIn)
+    );
+
+    res.cookie(
+      CookieUtils.REFRESH_TOKEN_COOKIE,
+      result.refreshToken,
+      CookieUtils.getRefreshTokenCookieOptions()
+    );
+
+    // 返回响应，但不包含 token
+    const { token, refreshToken: newRefreshToken, ...response } = result;
+    return response;
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get("profile")
+  @Get("me")
   async getProfile(@Request() req: any) {
-    return this.authService.getCurrentUser(req.user.id);
+    return this.authService.getCurrentUser(req.user.sub);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -96,7 +148,7 @@ export class AuthController {
     @Request() req: any,
     @Body() changePasswordDto: ChangePasswordRequest
   ) {
-    return this.authService.changePassword(req.user.id, changePasswordDto);
+    return this.authService.changePassword(req.user.sub, changePasswordDto);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -106,14 +158,23 @@ export class AuthController {
     @Request() req: any,
     @Body() updateProfileDto: UpdateProfileRequest
   ) {
-    return this.authService.updateProfile(req.user.id, updateProfileDto);
+    return this.authService.updateProfile(req.user.sub, updateProfileDto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post("logout")
   @HttpCode(HttpStatus.OK)
-  async logout() {
-    // 在生产环境中，这里可以实现 token 黑名单机制
+  async logout(@Res({ passthrough: true }) res: Response) {
+    // 清除 cookie 中的 token
+    res.clearCookie(
+      CookieUtils.ACCESS_TOKEN_COOKIE,
+      CookieUtils.getClearCookieOptions()
+    );
+    res.clearCookie(
+      CookieUtils.REFRESH_TOKEN_COOKIE,
+      CookieUtils.getClearCookieOptions()
+    );
+
     return { message: "退出登录成功" };
   }
 }
