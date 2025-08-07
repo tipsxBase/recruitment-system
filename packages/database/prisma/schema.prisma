@@ -499,3 +499,18 @@ enum AttachmentCategory {
   CONTRACT /// 合同
   OTHER /// 其他
 }
+
+/// 邮箱验证码表（替代内存存储）
+model EmailVerificationCode {
+  id          String   @id @default(uuid())
+  email       String /// 邮箱地址
+  code        String /// 验证码
+  attempts    Int      @default(0) /// 尝试次数
+  expiresAt   DateTime /// 过期时间
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([email])
+  @@index([expiresAt])
+  @@index([email, expiresAt])
+}

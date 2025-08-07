@@ -7,6 +7,18 @@ import {
   UserStatusSchema,
 } from "./common.schema.js";
 
+// 发送邮箱验证码请求
+export const SendVerificationCodeRequestSchema = z.object({
+  email: EmailSchema,
+});
+
+// 发送邮箱验证码响应
+export const SendVerificationCodeResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  expiresIn: z.number(), // 验证码有效期（秒）
+});
+
 // 注册请求
 export const RegisterRequestSchema = z.object({
   username: z
@@ -16,7 +28,7 @@ export const RegisterRequestSchema = z.object({
     .regex(/^[a-zA-Z0-9_]+$/, "用户名只能包含字母、数字和下划线"),
   email: EmailSchema,
   password: PasswordSchema,
-  verificationCode: z
+  emailVerificationCode: z
     .string()
     .length(6, "验证码必须是6位")
     .regex(/^\d{6}$/, "验证码必须是数字"),
@@ -28,8 +40,7 @@ export const RegisterResponseSchema = z.object({
   username: z.string(),
   email: z.string(),
   emailVerified: z.boolean(),
-  needActivation: z.boolean(),
-  activationUrl: z.string().optional(),
+  message: z.string(),
 });
 
 // 登录请求
@@ -79,17 +90,6 @@ export const LoginResponseSchema = z.object({
   token: z.string(),
   refreshToken: z.string(),
   expiresIn: z.number(),
-});
-
-// 邮箱激活请求
-export const ActivateRequestSchema = z.object({
-  token: z.string(),
-});
-
-// 邮箱激活响应
-export const ActivateResponseSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
 });
 
 // 忘记密码请求
@@ -168,13 +168,17 @@ export const UpdateProfileRequestSchema = z.object({
 export const UpdateProfileResponseSchema = UserSchema;
 
 // 类型导出
+export type SendVerificationCodeRequest = z.infer<
+  typeof SendVerificationCodeRequestSchema
+>;
+export type SendVerificationCodeResponse = z.infer<
+  typeof SendVerificationCodeResponseSchema
+>;
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
 export type RegisterResponse = z.infer<typeof RegisterResponseSchema>;
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 export type LoginResponse = z.infer<typeof LoginResponseSchema>;
 export type User = z.infer<typeof UserSchema>;
-export type ActivateRequest = z.infer<typeof ActivateRequestSchema>;
-export type ActivateResponse = z.infer<typeof ActivateResponseSchema>;
 export type ForgotPasswordRequest = z.infer<typeof ForgotPasswordRequestSchema>;
 export type ForgotPasswordResponse = z.infer<
   typeof ForgotPasswordResponseSchema

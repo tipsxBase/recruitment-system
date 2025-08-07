@@ -1,8 +1,14 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { PrismaClient } from "@recruitment/database";
 import * as bcrypt from "bcryptjs";
+import { EmailService } from "../common/services/email.service";
+import { VerificationCodeService } from "../common/services/verification-code.service";
 import {
   type LoginRequest,
   type RegisterRequest,
@@ -11,6 +17,7 @@ import {
   type RefreshTokenRequest,
   type ChangePasswordRequest,
   type UpdateProfileRequest,
+  type SendVerificationCodeRequest,
   type LoginResponse,
   type RegisterResponse,
   type ForgotPasswordResponse,
@@ -18,8 +25,8 @@ import {
   type RefreshTokenResponse,
   type ChangePasswordResponse,
   type UpdateProfileResponse,
+  type SendVerificationCodeResponse,
   type GetCurrentUserResponse,
-  type ActivateResponse,
 } from "@recruitment/schema";
 
 export interface JwtPayload {
@@ -45,7 +52,9 @@ export class AuthService {
 
   constructor(
     private jwtService: JwtService,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private emailService: EmailService,
+    private verificationCodeService: VerificationCodeService
   ) {
     this.prisma = new PrismaClient({
       log: ["query", "info", "warn", "error"],
@@ -125,24 +134,95 @@ export class AuthService {
     }
   }
 
-  async register(registerDto: RegisterRequest): Promise<RegisterResponse> {
-    const response = await fetch(`${this.serverBaseUrl}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(registerDto),
-    });
-    return await response.json();
+  async sendVerificationCode(
+    dto: SendVerificationCodeRequest
+  ): Promise<SendVerificationCodeResponse> {
+    // 检查发送频率限制
+    if (!this.verificationCodeService.checkRateLimit(dto.email)) {
+      throw new BadRequestException("发送过于频繁，请稍后再试");
+    }
+
+    // 生成验证码
+    const code = this.verificationCodeService.generateCode();
+
+    // 发送邮件
+    const emailSent = await this.emailService.sendVerificationCode(
+      dto.email,
+      code
+    );
+
+    if (!emailSent) {
+      throw new BadRequestException("邮件发送失败，请稍后重试");
+    }
+
+    // 存储验证码
+    this.verificationCodeService.storeCode(dto.email, code);
+
+    return {
+      success: true,
+      message: "验证码已发送，请检查您的邮箱",
+      expiresIn: 600, // 10分钟
+    };
   }
 
-  async activate(token: string): Promise<ActivateResponse> {
-    const response = await fetch(
-      `${this.serverBaseUrl}/auth/activate/${token}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+  async register(registerDto: RegisterRequest): Promise<RegisterResponse> {
+    try {
+      // 验证邮箱验证码
+      const verifyResult = await this.verificationCodeService.verifyCode(
+        registerDto.email,
+        registerDto.emailVerificationCode
+      );
+
+      if (!verifyResult.success) {
+        throw new BadRequestException(verifyResult.message);
       }
-    );
-    return await response.json();
+
+      // 检查用户名是否已存在
+      const existingUser = await this.prisma.user.findFirst({
+        where: {
+          OR: [
+            { username: registerDto.username },
+            { email: registerDto.email },
+          ],
+        },
+      });
+
+      if (existingUser) {
+        if (existingUser.username === registerDto.username) {
+          throw new BadRequestException("用户名已存在");
+        }
+        if (existingUser.email === registerDto.email) {
+          throw new BadRequestException("邮箱已注册");
+        }
+      }
+
+      // 加密密码
+      const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+
+      // 创建用户
+      const user = await this.prisma.user.create({
+        data: {
+          username: registerDto.username,
+          email: registerDto.email,
+          password: hashedPassword,
+          emailVerified: true, // 验证码验证通过，直接设置为已验证
+          status: "ACTIVE",
+        },
+      });
+
+      return {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        message: "注册成功！",
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException("注册失败，请稍后重试");
+    }
   }
 
   async forgotPassword(

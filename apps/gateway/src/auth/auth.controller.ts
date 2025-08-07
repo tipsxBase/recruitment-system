@@ -13,6 +13,8 @@ import {
   UsePipes,
   Res,
   UnauthorizedException,
+  Ip,
+  Headers,
 } from "@nestjs/common";
 import { Response } from "express";
 import { ThrottlerGuard } from "@nestjs/throttler";
@@ -27,7 +29,7 @@ import {
   RefreshTokenRequestSchema,
   ChangePasswordRequestSchema,
   UpdateProfileRequestSchema,
-  ActivateRequestSchema,
+  SendVerificationCodeRequestSchema,
   type LoginRequest,
   type RegisterRequest,
   type ForgotPasswordRequest,
@@ -35,56 +37,128 @@ import {
   type RefreshTokenRequest,
   type ChangePasswordRequest,
   type UpdateProfileRequest,
-  type ActivateRequest,
+  type SendVerificationCodeRequest,
 } from "@recruitment/schema";
 import { ZodValidation } from "../common/pipes/zod-validation.pipe";
 import { CookieUtils } from "./utils/cookie.utils";
+import { OperationLogService } from "../common/services/operation-log.service";
+import {
+  LOG_ACTIONS,
+  LOG_RESULTS,
+} from "../common/constants/operation-log.constants";
 
 @Controller("auth")
 @UseGuards(ThrottlerGuard)
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private operationLogService: OperationLogService
+  ) {}
 
   @Post("login")
   @HttpCode(HttpStatus.OK)
   @UsePipes(ZodValidation(LoginRequestSchema))
   async login(
     @Body() loginDto: LoginRequest,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
+    @Ip() ipAddress: string,
+    @Headers("user-agent") userAgent: string
   ) {
-    const result = await this.authService.login(loginDto);
+    try {
+      const result = await this.authService.login(loginDto);
 
-    // 设置 JWT token 到 cookie
-    res.cookie(
-      CookieUtils.ACCESS_TOKEN_COOKIE,
-      result.token,
-      CookieUtils.getAccessTokenCookieOptions(result.expiresIn)
-    );
+      // 设置 JWT token 到 cookie
+      res.cookie(
+        CookieUtils.ACCESS_TOKEN_COOKIE,
+        result.token,
+        CookieUtils.getAccessTokenCookieOptions(result.expiresIn)
+      );
 
-    // 设置 refresh token 到 cookie
-    res.cookie(
-      CookieUtils.REFRESH_TOKEN_COOKIE,
-      result.refreshToken,
-      CookieUtils.getRefreshTokenCookieOptions()
-    );
+      // 设置 refresh token 到 cookie
+      res.cookie(
+        CookieUtils.REFRESH_TOKEN_COOKIE,
+        result.refreshToken,
+        CookieUtils.getRefreshTokenCookieOptions()
+      );
 
-    // 返回响应，但不包含 token（因为已经在 cookie 中）
-    const { token, refreshToken, ...response } = result;
-    return response;
+      // 记录登录成功日志
+      await this.operationLogService.logAuth(
+        LOG_ACTIONS.USER_LOGIN,
+        result.user.id,
+        LOG_RESULTS.SUCCESS,
+        {
+          email: loginDto.username, // username 可能是邮箱
+          ipAddress,
+          userAgent,
+        }
+      );
+
+      // 返回响应，但不包含 token（因为已经在 cookie 中）
+      const { token, refreshToken, ...response } = result;
+      return response;
+    } catch (error) {
+      // 记录登录失败日志 - 没有用户ID，用临时ID
+      await this.operationLogService.logAuth(
+        LOG_ACTIONS.USER_LOGIN,
+        "unknown", // 登录失败时无法获取用户ID
+        LOG_RESULTS.FAILED,
+        {
+          email: loginDto.username,
+          ipAddress,
+          userAgent,
+          errorMsg: error.message,
+        }
+      );
+      throw error;
+    }
   }
 
   @Post("register")
   @HttpCode(HttpStatus.CREATED)
   @UsePipes(ZodValidation(RegisterRequestSchema))
-  async register(@Body() registerDto: RegisterRequest) {
-    return this.authService.register(registerDto);
+  async register(
+    @Body() registerDto: RegisterRequest,
+    @Ip() ipAddress: string,
+    @Headers("user-agent") userAgent: string
+  ) {
+    try {
+      const result = await this.authService.register(registerDto);
+
+      // 记录注册成功日志
+      await this.operationLogService.logAuth(
+        LOG_ACTIONS.USER_REGISTER,
+        result.id, // result 直接包含用户信息
+        LOG_RESULTS.SUCCESS,
+        {
+          email: registerDto.email,
+          ipAddress,
+          userAgent,
+        }
+      );
+
+      return result;
+    } catch (error) {
+      // 记录注册失败日志
+      await this.operationLogService.logAuth(
+        LOG_ACTIONS.USER_REGISTER,
+        "unknown",
+        LOG_RESULTS.FAILED,
+        {
+          email: registerDto.email,
+          ipAddress,
+          userAgent,
+          errorMsg: error.message,
+        }
+      );
+      throw error;
+    }
   }
 
-  @Post("activate")
+  @Post("send-verification-code")
   @HttpCode(HttpStatus.OK)
-  @UsePipes(ZodValidation(ActivateRequestSchema))
-  async activate(@Body() activateDto: ActivateRequest) {
-    return this.authService.activate(activateDto.token);
+  @UsePipes(ZodValidation(SendVerificationCodeRequestSchema))
+  async sendVerificationCode(@Body() sendCodeDto: SendVerificationCodeRequest) {
+    return this.authService.sendVerificationCode(sendCodeDto);
   }
 
   @Post("forgot-password")
@@ -164,7 +238,12 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post("logout")
   @HttpCode(HttpStatus.OK)
-  async logout(@Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Request() req: any,
+    @Res({ passthrough: true }) res: Response,
+    @Ip() ipAddress: string,
+    @Headers("user-agent") userAgent: string
+  ) {
     // 清除 cookie 中的 token
     res.clearCookie(
       CookieUtils.ACCESS_TOKEN_COOKIE,
@@ -173,6 +252,17 @@ export class AuthController {
     res.clearCookie(
       CookieUtils.REFRESH_TOKEN_COOKIE,
       CookieUtils.getClearCookieOptions()
+    );
+
+    // 记录退出登录日志
+    await this.operationLogService.logAuth(
+      LOG_ACTIONS.USER_LOGOUT,
+      req.user.sub,
+      LOG_RESULTS.SUCCESS,
+      {
+        ipAddress,
+        userAgent,
+      }
     );
 
     return { message: "退出登录成功" };
