@@ -668,7 +668,7 @@ interface GetDepartmentDetailResponse {
 
 **接口路径**: `POST /api/v1/departments`
 
-**权限要求**: 管理员
+**权限要求**: 管理员，管理员（可创建子部门）
 
 **入参**:
 
@@ -705,7 +705,7 @@ interface CreateDepartmentResponse {
 
 **接口路径**: `PUT /api/v1/departments/{id}`
 
-**权限要求**: 管理员
+**权限要求**: 管理员，部门负责人（可以更新自己管理的部门）
 
 **入参**:
 
@@ -743,7 +743,7 @@ interface UpdateDepartmentResponse {
 
 **接口路径**: `DELETE /api/v1/departments/{id}`
 
-**权限要求**: 管理员
+**权限要求**: 管理员，管理员（删除子部门）
 
 **入参**: 无
 
