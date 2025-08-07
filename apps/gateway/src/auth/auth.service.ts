@@ -66,17 +66,77 @@ export class AuthService {
   }
 
   async validateUser(username: string, password: string): Promise<AuthUser> {
-    console.log("验证用户凭据:", { username, password });
+    console.log("验证用户凭据:", { username });
 
-    // Mock 返回数据 - 实际实现时替换为真正的数据库查询
-    return {
-      id: "550e8400-e29b-41d4-a716-446655440000",
-      email: "user@example.com",
-      name: "测试用户",
-      roles: ["user"],
-      departments: ["tech"],
-      isActive: true,
-    };
+    try {
+      // 根据用户名或邮箱查找用户
+      const user = await this.prisma.user.findFirst({
+        where: {
+          OR: [{ username: username }, { email: username }],
+          isDeleted: false, // 排除已删除的用户
+          status: "ACTIVE", // 只允许激活状态的用户登录
+        },
+        include: {
+          department: {
+            include: {
+              parent: true, // 包含父部门信息
+            },
+          },
+          roles: {
+            include: {
+              role: {
+                include: {
+                  permissions: true, // 包含权限信息
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException("用户不存在或账户已被禁用");
+      }
+
+      // 验证密码
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        throw new UnauthorizedException("密码错误");
+      }
+
+      // 检查邮箱是否已验证（可选，根据业务需求）
+      if (!user.emailVerified && user.email) {
+        throw new UnauthorizedException("请先验证您的邮箱");
+      }
+
+      // 提取角色和权限信息
+      const roles = user.roles.map(
+        (userRole) => userRole.role.code || userRole.role.name
+      );
+      const permissions = user.roles.flatMap((userRole) =>
+        userRole.role.permissions.map(
+          (permission) => permission.code || permission.name
+        )
+      );
+
+      // 提取部门信息
+      const departments = user.department ? [user.department.id] : [];
+
+      return {
+        id: user.id,
+        email: user.email || "",
+        name: user.username,
+        roles,
+        departments,
+        isActive: user.status === "ACTIVE",
+      };
+    } catch (error) {
+      console.error("用户验证失败:", error);
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException("登录验证失败");
+    }
   }
 
   async login(loginDto: LoginRequest): Promise<LoginResponse> {
@@ -96,40 +156,77 @@ export class AuthService {
       const token = this.jwtService.sign(payload);
       const refreshToken = this.jwtService.sign(payload, { expiresIn: "7d" });
 
-      return {
-        user: {
-          id: authUser.id,
-          username: authUser.name,
-          email: authUser.email,
-          emailVerified: true,
-          employeeNo: "EMP001",
-          phone: "13812345678",
-          status: "ACTIVE",
+      // 获取完整的用户信息用于返回
+      const userDetail = await this.prisma.user.findUnique({
+        where: { id: authUser.id },
+        include: {
           department: {
-            id: "dept-001",
-            name: "技术部",
-            parent: {
-              id: "dept-parent",
-              name: "研发中心",
+            include: {
+              parent: true,
             },
           },
-          roles: [
-            {
-              id: "role-001",
-              name: "开发者",
-              code: "developer",
-              description: "软件开发人员",
+          roles: {
+            include: {
+              role: {
+                include: {
+                  permissions: true,
+                },
+              },
             },
-          ],
-          permissions: ["user:read", "post:read", "candidate:read"],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          },
         },
+      });
+
+      if (!userDetail) {
+        throw new UnauthorizedException("用户信息获取失败");
+      }
+
+      // 构建返回的用户信息
+      const userInfo = {
+        id: userDetail.id,
+        username: userDetail.username,
+        email: userDetail.email || "",
+        emailVerified: userDetail.emailVerified,
+        employeeNo: userDetail.employeeNo || "",
+        phone: userDetail.phone || "",
+        status: userDetail.status,
+        department: userDetail.department
+          ? {
+              id: userDetail.department.id,
+              name: userDetail.department.name,
+              parent: userDetail.department.parent
+                ? {
+                    id: userDetail.department.parent.id,
+                    name: userDetail.department.parent.name,
+                  }
+                : undefined,
+            }
+          : undefined,
+        roles: userDetail.roles.map((userRole) => ({
+          id: userRole.role.id,
+          name: userRole.role.name,
+          code: userRole.role.code || "",
+          description: userRole.role.description || "",
+        })),
+        permissions: userDetail.roles.flatMap((userRole) =>
+          userRole.role.permissions.map(
+            (permission) => permission.code || permission.name
+          )
+        ),
+        createdAt: userDetail.createdAt.toISOString(),
+        updatedAt: userDetail.updatedAt.toISOString(),
+      };
+
+      return {
+        user: userInfo,
         token,
         refreshToken,
         expiresIn: 3600,
       };
     } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException("登录失败");
     }
   }
@@ -263,34 +360,76 @@ export class AuthService {
   }
 
   async getCurrentUser(userId: string): Promise<GetCurrentUserResponse> {
-    return {
-      id: userId,
-      username: "testuser",
-      email: "test@example.com",
-      emailVerified: true,
-      employeeNo: "EMP001",
-      phone: "13812345678",
-      status: "ACTIVE",
-      department: {
-        id: "dept-001",
-        name: "技术部",
-        parent: {
-          id: "dept-parent",
-          name: "研发中心",
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id: userId,
+          isDeleted: false,
+          status: "ACTIVE",
         },
-      },
-      roles: [
-        {
-          id: "role-001",
-          name: "开发者",
-          code: "developer",
-          description: "软件开发人员",
+        include: {
+          department: {
+            include: {
+              parent: true,
+            },
+          },
+          roles: {
+            include: {
+              role: {
+                include: {
+                  permissions: true,
+                },
+              },
+            },
+          },
         },
-      ],
-      permissions: ["user:read", "post:read", "candidate:read"],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+      });
+
+      if (!user) {
+        throw new UnauthorizedException("用户不存在或已被禁用");
+      }
+
+      return {
+        id: user.id,
+        username: user.username,
+        email: user.email || "",
+        emailVerified: user.emailVerified,
+        employeeNo: user.employeeNo || "",
+        phone: user.phone || "",
+        status: user.status,
+        department: user.department
+          ? {
+              id: user.department.id,
+              name: user.department.name,
+              parent: user.department.parent
+                ? {
+                    id: user.department.parent.id,
+                    name: user.department.parent.name,
+                  }
+                : undefined,
+            }
+          : undefined,
+        roles: user.roles.map((userRole) => ({
+          id: userRole.role.id,
+          name: userRole.role.name,
+          code: userRole.role.code || "",
+          description: userRole.role.description || "",
+        })),
+        permissions: user.roles.flatMap((userRole) =>
+          userRole.role.permissions.map(
+            (permission) => permission.code || permission.name
+          )
+        ),
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
+      };
+    } catch (error) {
+      console.error("获取当前用户失败:", error);
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException("获取用户信息失败");
+    }
   }
 
   async changePassword(
