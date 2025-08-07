@@ -247,7 +247,7 @@ interface RefreshTokenResponse {
 
 ### 2.7 获取当前用户信息
 
-**接口路径**: `GET /api/v1/auth/me`
+**接口路径**: `GET /api/v1/auth/profile`
 
 **权限要求**: 所有登录用户
 
