@@ -325,23 +325,50 @@ export class AuthService {
   async forgotPassword(
     dto: ForgotPasswordRequest
   ): Promise<ForgotPasswordResponse> {
-    const response = await fetch(`${this.serverBaseUrl}/auth/forgot-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(dto),
+    // 查找用户
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
     });
-    return await response.json();
+    if (!user) {
+      throw new BadRequestException("用户不存在");
+    }
+
+    // 生成密码重置令牌
+    const resetToken = this.jwtService.sign(
+      { sub: user.id },
+      { secret: this.configService.get<string>("JWT_SECRET"), expiresIn: "1h" }
+    );
+
+    // 构建重置链接
+    const resetUrl = `${this.serverBaseUrl}/auth/reset-password?token=${resetToken}`;
+
+    // 发送重置邮件
+    await this.emailService.sendPasswordResetEmail(user.email, resetUrl);
+
+    return { message: "密码重置邮件已发送", success: true };
   }
 
   async resetPassword(
     dto: ResetPasswordRequest
   ): Promise<ResetPasswordResponse> {
-    const response = await fetch(`${this.serverBaseUrl}/auth/reset-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(dto),
+    // 验证令牌
+    let payload: JwtPayload;
+    try {
+      payload = this.jwtService.verify(dto.token, {
+        secret: this.configService.get<string>("JWT_SECRET"),
+      });
+    } catch (error) {
+      throw new BadRequestException("无效或过期的令牌");
+    }
+
+    // 更新用户密码
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    await this.prisma.user.update({
+      where: { id: payload.sub },
+      data: { password: hashedPassword },
     });
-    return await response.json();
+
+    return { message: "密码已成功重置", success: true };
   }
 
   async refreshToken(dto: RefreshTokenRequest): Promise<RefreshTokenResponse> {
