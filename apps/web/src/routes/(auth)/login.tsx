@@ -30,7 +30,7 @@ import type { z } from "zod";
 // 使用 Zod schema 的输入类型，rememberMe 在输入时是可选的
 type LoginFormData = z.input<typeof LoginRequestSchema>;
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute("/(auth)/login")({
   component: LoginPage,
 });
 

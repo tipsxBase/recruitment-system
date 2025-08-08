@@ -30,7 +30,7 @@ import {
   type SendVerificationCodeRequest,
 } from "@recruitment/schema";
 
-export const Route = createFileRoute("/register")({
+export const Route = createFileRoute("/(auth)/register")({
   component: RegisterPage,
 });
 
