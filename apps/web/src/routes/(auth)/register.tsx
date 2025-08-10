@@ -33,9 +33,9 @@ import { redirectIfAuthenticated } from "@/lib/auth-guards";
 
 export const Route = createFileRoute("/(auth)/register")({
   component: RegisterPage,
-  beforeLoad: () => {
+  beforeLoad: async () => {
     // 检查用户是否已经登录，如果已登录则重定向到首页
-    redirectIfAuthenticated();
+    await redirectIfAuthenticated();
   },
 });
 

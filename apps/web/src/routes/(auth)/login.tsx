@@ -33,10 +33,10 @@ type LoginFormData = z.input<typeof LoginRequestSchema>;
 
 export const Route = createFileRoute("/(auth)/login")({
   component: LoginPage,
-  beforeLoad: () => {
+  beforeLoad: async () => {
     console.log("Login beforeLoad called");
     // 检查用户是否已经登录，如果已登录则重定向到首页
-    redirectIfAuthenticated();
+    await redirectIfAuthenticated();
   },
 });
 

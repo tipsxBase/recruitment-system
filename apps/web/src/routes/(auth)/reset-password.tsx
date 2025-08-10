@@ -103,8 +103,8 @@ const ResetPassword: React.FC = () => {
 
 export const Route = createFileRoute("/(auth)/reset-password")({
   component: ResetPassword,
-  beforeLoad: () => {
+  beforeLoad: async () => {
     // 检查用户是否已经登录，如果已登录则重定向到首页
-    redirectIfAuthenticated();
+    await redirectIfAuthenticated();
   },
 });

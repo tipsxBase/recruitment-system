@@ -4,6 +4,7 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";
+import { authStore } from "@/stores/auth";
 
 import "./styles.css";
 import reportWebVitals from "./reportWebVitals.ts";
@@ -24,16 +25,30 @@ declare module "@tanstack/react-router" {
   }
 }
 
-// Render the app
-const rootElement = document.getElementById("app");
-if (rootElement && !rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(
-    <StrictMode>
-      <RouterProvider router={router} />
-    </StrictMode>
-  );
-}
+// 应用启动时立即初始化认证状态
+const initializeApp = async () => {
+  try {
+    // 在应用启动时就初始化用户状态
+    await authStore.getState().initialLoader();
+  } catch (error) {
+    // 用户未登录是正常情况，不需要特别处理
+    console.log("User not authenticated on app start");
+  }
+
+  // 渲染应用
+  const rootElement = document.getElementById("app");
+  if (rootElement && !rootElement.innerHTML) {
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(
+      <StrictMode>
+        <RouterProvider router={router} />
+      </StrictMode>
+    );
+  }
+};
+
+// 启动应用
+initializeApp();
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
