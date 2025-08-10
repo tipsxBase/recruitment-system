@@ -4,6 +4,9 @@ import { ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "./auth/auth.module";
 import { ProxyModule } from "./proxy/proxy.module";
 import { HealthModule } from "./health/health.module";
+import { APP_FILTER, APP_INTERCEPTOR } from "@nestjs/core";
+import { ResponseInterceptor } from "@/common/interceptors/response.interceptor";
+import { HttpExceptionFilter } from "./common/filter/http-exception.filter";
 
 @Module({
   imports: [
@@ -37,6 +40,15 @@ import { HealthModule } from "./health/health.module";
     ProxyModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter, // 全局异常过滤器
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
+    },
+  ],
 })
 export class AppModule {}

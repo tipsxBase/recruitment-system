@@ -1,4 +1,4 @@
-import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,16 +26,21 @@ import { useAuthStore } from "@/stores/auth";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { LoginRequestSchema } from "@recruitment/schema";
 import type { z } from "zod";
+import { redirectIfAuthenticated } from "@/lib/auth-guards";
 
 // 使用 Zod schema 的输入类型，rememberMe 在输入时是可选的
 type LoginFormData = z.input<typeof LoginRequestSchema>;
 
 export const Route = createFileRoute("/(auth)/login")({
   component: LoginPage,
+  beforeLoad: () => {
+    console.log("Login beforeLoad called");
+    // 检查用户是否已经登录，如果已登录则重定向到首页
+    redirectIfAuthenticated();
+  },
 });
 
 function LoginPage() {
-  const router = useRouter();
   const { login, isLoading } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string>("");
@@ -53,7 +58,8 @@ function LoginPage() {
     try {
       setError("");
       await login(data);
-      router.navigate({ to: "/" });
+      // 此处需要使用 window.location.href 来确保页面刷新
+      window.location.href = "/";
     } catch (err) {
       setError(err instanceof Error ? err.message : "登录失败，请重试");
     }

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
+import { redirectIfAuthenticated } from "@/lib/auth-guards";
 
 const ResetPassword: React.FC = () => {
   const [password, setPassword] = useState("");
@@ -102,4 +103,8 @@ const ResetPassword: React.FC = () => {
 
 export const Route = createFileRoute("/(auth)/reset-password")({
   component: ResetPassword,
+  beforeLoad: () => {
+    // 检查用户是否已经登录，如果已登录则重定向到首页
+    redirectIfAuthenticated();
+  },
 });

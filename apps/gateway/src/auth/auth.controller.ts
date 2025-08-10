@@ -46,6 +46,7 @@ import {
   LOG_ACTIONS,
   LOG_RESULTS,
 } from "../common/constants/operation-log.constants";
+import { ExceptionUtils } from "@/common/exceptions";
 
 @Controller("auth")
 @UseGuards(ThrottlerGuard)
@@ -210,8 +211,10 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get("me")
+  @Get("profile")
   async getProfile(@Request() req: any) {
+    // ExceptionUtils.throwBusiness("不允许更新密码字段");
+
     return this.authService.getCurrentUser(req.user.sub);
   }
 

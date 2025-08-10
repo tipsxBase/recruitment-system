@@ -24,14 +24,14 @@ import {
   Bell,
 } from "lucide-react";
 import Header from "@/components/Header";
-import logo from "../logo.svg";
+import { useGlobalStore } from "@/stores/global";
 
 export const Route = createFileRoute("/")({
   component: App,
 });
 
 function App() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated } = useGlobalStore();
 
   if (!isAuthenticated || !user) {
     return (
@@ -43,11 +43,11 @@ function App() {
               {/* Hero Section */}
               <div className="text-center mb-12">
                 <div className="mb-8">
-                  <img
+                  {/* <img
                     src={logo}
                     className="h-16 mx-auto mb-6 drop-shadow-sm"
                     alt="招聘系统"
-                  />
+                  /> */}
                   <h1 className="text-3xl font-light text-slate-800 mb-3 tracking-tight">
                     企业招聘管理系统
                   </h1>

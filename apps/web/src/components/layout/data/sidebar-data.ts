@@ -56,22 +56,22 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: "Dashboard",
-          url: "/",
+          url: "/dashboard",
           icon: IconLayoutDashboard,
         },
         {
-          title: "Tasks",
-          url: "/tasks",
+          title: "Interviews",
+          url: "/interviews",
           icon: IconChecklist,
         },
         {
-          title: "Apps",
-          url: "/apps",
+          title: "Jobs",
+          url: "/jobs",
           icon: IconPackages,
         },
         {
-          title: "Chats",
-          url: "/chats",
+          title: "Candidates",
+          url: "/candidates",
           badge: "3",
           icon: IconMessages,
         },
