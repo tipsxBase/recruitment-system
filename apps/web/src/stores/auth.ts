@@ -1,32 +1,11 @@
-import { create } from "zustand";
-
-// 由于 schema 包在 packages 中，我们需要直接引用类型定义
-interface User {
-  id: string;
-  username: string;
-  email?: string;
-  emailVerified: boolean;
-  employeeNo?: string;
-  phone?: string;
-  status: string;
-  department?: {
-    id: string;
-    name: string;
-    parent?: {
-      id: string;
-      name: string;
-    };
-  };
-  roles: Array<{
-    id: string;
-    name: string;
-    code: string;
-    description?: string;
-  }>;
-  permissions: string[];
-  createdAt: string;
-  updatedAt: string;
-}
+import { getProfile } from "@/service/xhr/user";
+import type { User } from "@recruitment/schema";
+import {
+  createStore,
+  useStore,
+  type StoreApi,
+  type UseBoundStore,
+} from "zustand";
 
 interface AuthState {
   user: User | null;
@@ -51,7 +30,7 @@ interface AuthState {
     emailVerificationCode: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
-  getCurrentUser: () => Promise<void>;
+  initialLoader: () => Promise<User>;
   sendVerificationCode: (
     email: string
   ) => Promise<{ success: boolean; message: string; expiresIn: number }>;
@@ -59,7 +38,7 @@ interface AuthState {
 
 const API_BASE_URL = "http://localhost:8080/api";
 
-export const useAuthStore = create<AuthState>()((set) => ({
+export const authStore = createStore<AuthState>()((set) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
@@ -67,6 +46,21 @@ export const useAuthStore = create<AuthState>()((set) => ({
   setUser: (user) => set({ user, isAuthenticated: true }),
   clearUser: () => set({ user: null, isAuthenticated: false }),
   setLoading: (isLoading) => set({ isLoading }),
+
+  // 初始化请求方法，会在应用启动时调用，
+  initialLoader: () => {
+    set({ isLoading: true });
+    return getProfile()
+      .then((res) => {
+        // 用户已登录
+        const { data } = res;
+        set({ user: data, isAuthenticated: true }); // 设置用户信息和认证状态
+        return data!; // 返回用户信息
+      })
+      .finally(() => {
+        set({ isLoading: false });
+      });
+  },
 
   login: async (credentials) => {
     try {
@@ -136,28 +130,6 @@ export const useAuthStore = create<AuthState>()((set) => ({
     }
   },
 
-  getCurrentUser: async () => {
-    try {
-      set({ isLoading: true });
-
-      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        const user = await response.json();
-        set({ user, isAuthenticated: true });
-      } else {
-        set({ user: null, isAuthenticated: false });
-      }
-    } catch (error) {
-      console.error("Get current user error:", error);
-      set({ user: null, isAuthenticated: false });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
   sendVerificationCode: async (email) => {
     const response = await fetch(
       `${API_BASE_URL}/auth/send-verification-code`,
@@ -178,3 +150,13 @@ export const useAuthStore = create<AuthState>()((set) => ({
     return response.json();
   },
 }));
+
+const createSelectors = <S extends StoreApi<object>>(_store: S) => {
+  const useBoundStore: any = (selector?: any) => useStore(authStore, selector);
+
+  Object.assign(useBoundStore, authStore);
+
+  return useBoundStore as UseBoundStore<StoreApi<AuthState>>;
+};
+
+export const useAuthStore = createSelectors(authStore);

@@ -1,10 +1,10 @@
 import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
-import globalStore from "@/stores/global";
+import { authStore } from "@/stores/auth";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
-    if (globalStore.getState().isAuthenticated) {
+    if (authStore.getState().isAuthenticated) {
       return;
     }
     throw redirect({

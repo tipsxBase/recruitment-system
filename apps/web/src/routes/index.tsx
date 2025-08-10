@@ -24,14 +24,13 @@ import {
   Bell,
 } from "lucide-react";
 import Header from "@/components/Header";
-import { useGlobalStore } from "@/stores/global";
 
 export const Route = createFileRoute("/")({
   component: App,
 });
 
 function App() {
-  const { user, isAuthenticated } = useGlobalStore();
+  const { user, isAuthenticated } = useAuthStore();
 
   if (!isAuthenticated || !user) {
     return (
