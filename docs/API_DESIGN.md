@@ -7,6 +7,7 @@
 - **Content-Type**: `application/json`
 - **Authorization**: `Bearer <token>`
 - **请求路径**: `/api/v1/{module}/{action}`
+- **组织标识**: 通过请求头 `X-Organization-Id` 或查询参数 `orgId` 传递当前组织ID
 
 ### 1.2 响应格式
 
@@ -43,7 +44,21 @@ interface PaginationParams {
 - 401: 未认证
 - 403: 权限不足
 - 404: 资源不存在
+- 409: 资源冲突
+- 422: 业务逻辑错误
 - 500: 服务器内部错误
+
+### 1.5 内置角色
+
+```typescript
+enum BuiltInRoles {
+  SUPER_ADMIN = "SUPER_ADMIN", // 超级管理员
+  ORG_ADMIN = "ORG_ADMIN", // 组织管理员
+  HR = "HR", // HR
+  DEPARTMENT_LEADER = "DEPARTMENT_LEADER", // 部门负责人
+  INTERVIEWER = "INTERVIEWER", // 面试官
+}
+```
 
 ---
 
@@ -245,56 +260,215 @@ interface RefreshTokenResponse {
 2. 生成新的access token和refresh token
 3. 返回新令牌
 
-### 2.7 获取当前用户信息
+### 2.8 切换组织
 
-**接口路径**: `GET /api/v1/auth/profile`
+**接口路径**: `POST /api/v1/auth/switch-organization`
 
 **权限要求**: 所有登录用户
 
-**入参**: 无
+**入参**:
+
+```typescript
+interface SwitchOrganizationRequest {
+  orgId: string; // 目标组织ID
+}
+```
 
 **出参**:
 
 ```typescript
-interface GetCurrentUserResponse {
-  id: string;
-  username: string;
-  email?: string;
-  emailVerified: boolean;
-  employeeNo?: string;
-  phone?: string;
-  status: "ACTIVE" | "DISABLED";
-  department?: {
+interface SwitchOrganizationResponse {
+  user: {
     id: string;
-    name: string;
-    parent?: {
+    username: string;
+    currentOrgId: string;
+    currentOrg: {
       id: string;
       name: string;
     };
+    department?: {
+      id: string;
+      name: string;
+    };
+    roles: Array<{
+      id: string;
+      name: string;
+      code: string;
+    }>;
   };
-  roles: Array<{
-    id: string;
-    name: string;
-    code: string;
-    description?: string;
-  }>;
-  permissions: string[]; // 权限编码列表
-  createdAt: string;
-  updatedAt: string;
+  token: string; // 新的token，包含组织上下文
 }
 ```
 
 **业务逻辑**:
 
-1. 从token中获取用户ID
-2. 查询用户完整信息
-3. 包含部门、角色、权限信息
-4. 用于前端初始化用户状态
-5. 记录查询日志
+1. 验证用户是否属于目标组织
+2. 更新用户当前所在组织
+3. 重新生成包含组织上下文的token
+4. 记录组织切换日志
 
 ---
 
-## 3. 用户管理模块 (users)
+## 3. 组织管理模块 (organizations)
+
+### 3.1 获取组织列表
+
+**接口路径**: `GET /api/v1/organizations`
+
+**权限要求**: 超级管理员
+
+**入参**:
+
+```typescript
+interface GetOrganizationsRequest extends PaginationParams {
+  keyword?: string; // 搜索关键词
+  status?: "ACTIVE" | "DISABLED";
+}
+```
+
+**出参**:
+
+```typescript
+interface GetOrganizationsResponse {
+  organizations: Array<{
+    id: string;
+    name: string;
+    code?: string;
+    status: "ACTIVE" | "DISABLED";
+    admin?: {
+      id: string;
+      username: string;
+    };
+    userCount: number;
+    departmentCount: number;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+}
+```
+
+**业务逻辑**:
+
+1. 权限验证：仅超级管理员可访问
+2. 支持关键词搜索组织名称
+3. 支持按状态筛选
+4. 统计组织下用户和部门数量
+
+### 3.2 创建组织
+
+**接口路径**: `POST /api/v1/organizations`
+
+**权限要求**: 超级管理员
+
+**入参**:
+
+```typescript
+interface CreateOrganizationRequest {
+  name: string;
+  code?: string;
+  adminId?: string; // 组织管理员ID
+}
+```
+
+**出参**:
+
+```typescript
+interface CreateOrganizationResponse {
+  id: string;
+  name: string;
+  code?: string;
+  status: "ACTIVE";
+}
+```
+
+**业务逻辑**:
+
+1. 权限验证：仅超级管理员可创建
+2. 验证组织名称和编码的唯一性
+3. 创建组织根部门
+4. 如果指定管理员，建立关联关系
+5. 记录操作日志
+
+### 3.3 邀请用户加入组织
+
+**接口路径**: `POST /api/v1/organizations/{orgId}/invitations`
+
+**权限要求**: 组织管理员
+
+**入参**:
+
+```typescript
+interface InviteUserRequest {
+  inviteeId: string; // 被邀请用户ID
+  role: string; // 在组织中的角色
+  message?: string; // 邀请消息
+  expiresIn?: number; // 过期时间（小时），默认72小时
+}
+```
+
+**出参**:
+
+```typescript
+interface InviteUserResponse {
+  id: string;
+  invitee: {
+    id: string;
+    username: string;
+    email?: string;
+  };
+  role: string;
+  expiresAt: string;
+}
+```
+
+**业务逻辑**:
+
+1. 权限验证：仅组织管理员可邀请
+2. 验证被邀请用户是否已在组织中
+3. 创建邀请记录
+4. 发送邀请通知
+5. 记录操作日志
+
+### 3.4 响应组织邀请
+
+**接口路径**: `POST /api/v1/organizations/invitations/{invitationId}/respond`
+
+**权限要求**: 被邀请用户
+
+**入参**:
+
+```typescript
+interface RespondInvitationRequest {
+  action: "ACCEPT" | "REJECT";
+}
+```
+
+**出参**:
+
+```typescript
+interface RespondInvitationResponse {
+  success: boolean;
+  message: string;
+  userOrganization?: {
+    id: string;
+    role: string;
+    joinedAt: string;
+  };
+}
+```
+
+**业务逻辑**:
+
+1. 权限验证：仅被邀请用户可响应
+2. 验证邀请是否有效且未过期
+3. 如果接受，创建用户-组织关联
+4. 更新邀请状态
+5. 发送响应通知
+6. 记录操作日志
+
+---
+
+## 4. 用户管理模块 (users)
 
 ### 3.1 获取用户列表
 
@@ -1221,14 +1395,19 @@ interface DeletePostResponse {
 ```typescript
 interface GetCandidatesRequest extends PaginationParams {
   keyword?: string;
-  status?:
-    | "NEW"
-    | "DEPARTMENT_ASSESSING"
-    | "DEPARTMENT_PASSED"
-    | "DEPARTMENT_FAILED"
-    | "INTERVIEWING"
-    | "OFFERED"
-    | "REJECTED";
+/// 候选人状态
+enum CandidateStatus {
+  NEW = "NEW",
+  ASSESSMENT_PENDING = "ASSESSMENT_PENDING", // 等待分配评估人
+  ASSESSMENT_ASSIGNED = "ASSESSMENT_ASSIGNED", // 已分配评估人
+  ASSESSMENT_IN_PROGRESS = "ASSESSMENT_IN_PROGRESS", // 评估中
+  ASSESSMENT_COMPLETED = "ASSESSMENT_COMPLETED", // 评估完成，等待确认
+  ASSESSMENT_APPROVED = "ASSESSMENT_APPROVED", // 评定通过
+  ASSESSMENT_REJECTED = "ASSESSMENT_REJECTED", // 评定不通过
+  INTERVIEWING = "INTERVIEWING",
+  OFFERED = "OFFERED", // 录用
+  REJECTED = "REJECTED" // 淘汰
+}
   departmentId?: string;
   postId?: string;
   source?: string;
@@ -1246,14 +1425,7 @@ interface GetCandidatesResponse {
     name: string;
     email?: string;
     phone?: string;
-    status:
-      | "NEW"
-      | "DEPARTMENT_ASSESSING"
-      | "DEPARTMENT_PASSED"
-      | "DEPARTMENT_FAILED"
-      | "INTERVIEWING"
-      | "OFFERED"
-      | "REJECTED";
+    status: CandidateStatus;
     source?: string;
     expectedSalary?: string;
     currentCompany?: string;
@@ -1507,7 +1679,464 @@ interface UpdateCandidateStatusResponse {
 
 ---
 
-## 8. 部门评定模块 (assessments)
+## 8. 评估流程模块 (assessment-processes)
+
+### 8.1 发起评估流程
+
+**接口路径**: `POST /api/v1/assessment-processes`
+
+**权限要求**: HR、管理员
+
+**入参**:
+
+```typescript
+interface CreateAssessmentProcessRequest {
+  candidateId: string;
+  remarks?: string;
+}
+```
+
+**出参**:
+
+```typescript
+interface CreateAssessmentProcessResponse {
+  id: string;
+  candidate: {
+    id: string;
+    name: string;
+  };
+  department: {
+    id: string;
+    name: string;
+  };
+  departmentLeader: {
+    id: string;
+    username: string;
+  };
+  status: "PENDING";
+}
+```
+
+**业务逻辑**:
+
+1. 权限验证：仅HR和管理员可发起
+2. 验证候选人状态是否为NEW
+3. 自动获取候选人目标部门的负责人
+4. 创建评估流程记录
+5. 为部门负责人创建待办事项
+6. 更新候选人状态为ASSESSMENT_PENDING
+7. 发送通知
+8. 记录操作日志
+
+### 8.2 获取评估流程列表
+
+**接口路径**: `GET /api/v1/assessment-processes`
+
+**权限要求**: HR、管理员、部门负责人
+
+**入参**:
+
+```typescript
+interface GetAssessmentProcessesRequest extends PaginationParams {
+  status?:
+    | "PENDING"
+    | "SELF_ASSESSING"
+    | "ASSIGNED"
+    | "IN_PROGRESS"
+    | "COMPLETED"
+    | "APPROVED"
+    | "REJECTED";
+  candidateId?: string;
+  departmentId?: string;
+  assignedBy?: string;
+  assessorId?: string;
+}
+```
+
+**出参**:
+
+```typescript
+interface GetAssessmentProcessesResponse {
+  processes: Array<{
+    id: string;
+    candidate: {
+      id: string;
+      name: string;
+      email?: string;
+    };
+    department: {
+      id: string;
+      name: string;
+    };
+    departmentLeader: {
+      id: string;
+      username: string;
+    };
+    assessor?: {
+      id: string;
+      username: string;
+    };
+    status:
+      | "PENDING"
+      | "SELF_ASSESSING"
+      | "ASSIGNED"
+      | "IN_PROGRESS"
+      | "COMPLETED"
+      | "APPROVED"
+      | "REJECTED";
+    isSelfAssessment: boolean;
+    assignedBy: {
+      id: string;
+      username: string;
+    };
+    createdAt: string;
+    updatedAt: string;
+  }>;
+}
+```
+
+**业务逻辑**:
+
+1. 根据用户角色过滤可见的评估流程
+2. 部门负责人只能查看本部门的评估流程
+3. 支持多维度筛选
+4. 记录查询日志
+
+### 8.3 分配评估人
+
+**接口路径**: `POST /api/v1/assessment-processes/{id}/assign`
+
+**权限要求**: 部门负责人
+
+**入参**:
+
+```typescript
+interface AssignAssessorRequest {
+  assessorId?: string; // 如果为空表示自己评估
+  remarks?: string;
+}
+```
+
+**出参**:
+
+```typescript
+interface AssignAssessorResponse {
+  id: string;
+  assessor: {
+    id: string;
+    username: string;
+  };
+  status: "SELF_ASSESSING" | "ASSIGNED";
+  isSelfAssessment: boolean;
+}
+```
+
+**业务逻辑**:
+
+1. 权限验证：仅部门负责人可分配
+2. 验证评估流程状态为PENDING
+3. 如果不指定评估人，表示自己评估
+4. 更新评估流程状态和评估人
+5. 完成部门负责人的分配待办
+6. 为评估人创建执行评估的待办
+7. 更新候选人状态
+8. 发送通知
+9. 记录操作日志
+
+### 8.4 执行评估
+
+**接口路径**: `POST /api/v1/assessment-processes/{id}/assess`
+
+**权限要求**: 指定的评估人
+
+**入参**:
+
+```typescript
+interface ExecuteAssessmentRequest {
+  result: "PASSED" | "FAILED";
+  remarks?: string;
+}
+```
+
+**出参**:
+
+```typescript
+interface ExecuteAssessmentResponse {
+  id: string;
+  assessment: {
+    id: string;
+    result: "PASSED" | "FAILED";
+    remarks?: string;
+    assessedAt: string;
+  };
+  status: "COMPLETED";
+}
+```
+
+**业务逻辑**:
+
+1. 权限验证：仅指定的评估人可执行
+2. 验证评估流程状态为SELF_ASSESSING或IN_PROGRESS
+3. 创建评估记录
+4. 更新评估流程状态为COMPLETED
+5. 完成评估人的执行待办
+6. 如果非自评，为部门负责人创建确认待办
+7. 更新候选人状态
+8. 发送通知
+9. 记录操作日志
+
+### 8.5 确认评估结果
+
+**接口路径**: `POST /api/v1/assessment-processes/{id}/confirm`
+
+**权限要求**: 部门负责人
+
+**入参**:
+
+```typescript
+interface ConfirmAssessmentRequest {
+  approved: boolean; // true=通过，false=不通过
+  remarks?: string;
+}
+```
+
+**出参**:
+
+```typescript
+interface ConfirmAssessmentResponse {
+  id: string;
+  status: "APPROVED" | "REJECTED";
+  confirmedAt: string;
+}
+```
+
+**业务逻辑**:
+
+1. 权限验证：仅部门负责人可确认
+2. 验证评估流程状态为COMPLETED
+3. 更新评估流程状态为APPROVED或REJECTED
+4. 完成部门负责人的确认待办
+5. 更新候选人状态为ASSESSMENT_APPROVED或ASSESSMENT_REJECTED
+6. 发送通知
+7. 记录操作日志
+
+---
+
+## 9. 待办事项模块 (todos)
+
+### 9.1 获取我的待办
+
+**接口路径**: `GET /api/v1/todos/my`
+
+**权限要求**: 所有登录用户
+
+**入参**:
+
+```typescript
+interface GetMyTodosRequest extends PaginationParams {
+  type?:
+    | "ASSESSMENT_ASSIGN"
+    | "ASSESSMENT_EXECUTE"
+    | "ASSESSMENT_CONFIRM"
+    | "INTERVIEW_EXECUTE"
+    | "INTERVIEW_FEEDBACK"
+    | "ORGANIZATION_INVITATION";
+  status?: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  priority?: number;
+}
+```
+
+**出参**:
+
+```typescript
+interface GetMyTodosResponse {
+  todos: Array<{
+    id: string;
+    type:
+      | "ASSESSMENT_ASSIGN"
+      | "ASSESSMENT_EXECUTE"
+      | "ASSESSMENT_CONFIRM"
+      | "INTERVIEW_EXECUTE"
+      | "INTERVIEW_FEEDBACK"
+      | "ORGANIZATION_INVITATION";
+    title: string;
+    description?: string;
+    status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+    priority: number;
+    createdAt: string;
+
+    // 关联数据
+    assessmentProcess?: {
+      id: string;
+      candidate: {
+        id: string;
+        name: string;
+      };
+    };
+    interviewTask?: {
+      id: string;
+      interview: {
+        id: string;
+        round: number;
+        candidate: {
+          id: string;
+          name: string;
+        };
+      };
+    };
+    interview?: {
+      id: string;
+      round: number;
+      candidate: {
+        id: string;
+        name: string;
+      };
+    };
+  }>;
+}
+```
+
+**业务逻辑**:
+
+1. 查询当前用户的待办事项
+2. 支持按类型、状态、优先级筛选
+3. 按优先级和创建时间排序
+4. 包含关联的业务数据
+5. 记录查询日志
+
+### 9.2 获取待办详情
+
+**接口路径**: `GET /api/v1/todos/{id}`
+
+**权限要求**: 待办事项所有者
+
+**入参**: 无
+
+**出参**:
+
+```typescript
+interface GetTodoDetailResponse {
+  id: string;
+  type: string;
+  title: string;
+  description?: string;
+  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  priority: number;
+  createdAt: string;
+  completedAt?: string;
+
+  // 详细的关联数据
+  assessmentProcess?: {
+    id: string;
+    status: string;
+    candidate: {
+      id: string;
+      name: string;
+      email?: string;
+      phone?: string;
+      resumeUrl?: string;
+      post: {
+        id: string;
+        name: string;
+      };
+    };
+  };
+  interviewTask?: {
+    id: string;
+    status: string;
+    interview: {
+      id: string;
+      round: number;
+      scheduledAt: string;
+      location?: string;
+      meetingLink?: string;
+      candidate: {
+        id: string;
+        name: string;
+        resumeUrl?: string;
+      };
+    };
+  };
+}
+```
+
+**业务逻辑**:
+
+1. 权限验证：仅待办事项所有者可查看
+2. 返回详细的关联业务数据
+3. 用于前端展示待办详情页面
+4. 记录查询日志
+
+### 9.3 更新待办状态
+
+**接口路径**: `PUT /api/v1/todos/{id}/status`
+
+**权限要求**: 待办事项所有者
+
+**入参**:
+
+```typescript
+interface UpdateTodoStatusRequest {
+  status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+}
+```
+
+**出参**:
+
+```typescript
+interface UpdateTodoStatusResponse {
+  id: string;
+  status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  updatedAt: string;
+  completedAt?: string;
+}
+```
+
+**业务逻辑**:
+
+1. 权限验证：仅待办事项所有者可更新
+2. 更新待办状态
+3. 如果完成，记录完成时间
+4. 不直接影响业务流程，仅用于标记
+5. 记录操作日志
+
+### 9.4 获取待办统计
+
+**接口路径**: `GET /api/v1/todos/statistics`
+
+**权限要求**: 所有登录用户
+
+**入参**: 无
+
+**出参**:
+
+```typescript
+interface GetTodoStatisticsResponse {
+  total: number;
+  pending: number;
+  inProgress: number;
+  completed: number;
+  byType: Array<{
+    type: string;
+    count: number;
+  }>;
+  byPriority: Array<{
+    priority: number;
+    count: number;
+  }>;
+}
+```
+
+**业务逻辑**:
+
+1. 统计当前用户的待办事项
+2. 按状态、类型、优先级分组统计
+3. 用于首页仪表板显示
+4. 记录查询日志
+
+---
+
+## 10. 部门评定模块 (assessments)
 
 ### 8.1 获取评定列表
 
@@ -2669,3 +3298,175 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ---
 
 这份接口设计文档涵盖了招聘系统的所有核心功能模块，每个接口都包含了详细的路径、权限要求、入参出参格式以及业务逻辑说明。您可以按照这个设计进行具体的实现。如果需要调整某个模块的接口设计，请告诉我具体需求。
+
+---
+
+## 16. 系统初始化模块 (system-init)
+
+### 16.1 检查系统初始化状态
+
+**接口路径**: `GET /api/v1/system-init/status`
+
+**权限要求**: 无需认证
+
+**入参**: 无
+
+**出参**:
+
+```typescript
+interface GetInitStatusResponse {
+  initialized: boolean;
+  hasAdmin: boolean;
+  version: string;
+}
+```
+
+**业务逻辑**:
+
+1. 检查是否存在超级管理员账号
+2. 检查基础数据是否初始化
+3. 返回系统初始化状态
+
+### 16.2 初始化系统
+
+**接口路径**: `POST /api/v1/system-init/initialize`
+
+**权限要求**: 无需认证（仅在未初始化时可用）
+
+**入参**:
+
+```typescript
+interface InitializeSystemRequest {
+  admin: {
+    username: string;
+    password: string;
+    email: string;
+  };
+  systemConfig?: {
+    siteName?: string;
+    siteDescription?: string;
+  };
+}
+```
+
+**出参**:
+
+```typescript
+interface InitializeSystemResponse {
+  success: boolean;
+  admin: {
+    id: string;
+    username: string;
+  };
+  defaultRoles: Array<{
+    id: string;
+    name: string;
+    code: string;
+  }>;
+  defaultPermissions: Array<{
+    id: string;
+    name: string;
+    code: string;
+  }>;
+}
+```
+
+**业务逻辑**:
+
+1. 验证系统是否已初始化
+2. 创建超级管理员账号
+3. 初始化内置角色和权限
+4. 创建系统配置
+5. 标记系统为已初始化
+
+---
+
+## 17. 内置数据说明
+
+### 17.1 内置角色
+
+```typescript
+const BUILT_IN_ROLES = [
+  {
+    name: "超级管理员",
+    code: "SUPER_ADMIN",
+    description: "系统超级管理员，拥有所有权限",
+    isSystem: true,
+    permissions: ["*"], // 所有权限
+  },
+  {
+    name: "组织管理员",
+    code: "ORG_ADMIN",
+    description: "组织管理员，拥有组织内所有权限",
+    isSystem: true,
+    permissions: [
+      "ORG_MANAGE",
+      "DEPT_MANAGE",
+      "USER_MANAGE",
+      "ROLE_MANAGE",
+      "POST_MANAGE",
+      "CANDIDATE_MANAGE",
+      "INTERVIEW_MANAGE",
+      "ASSESSMENT_MANAGE",
+      "ANALYTICS_VIEW",
+      "LOG_VIEW",
+    ],
+  },
+  {
+    name: "HR专员",
+    code: "HR",
+    description: "HR专员，负责招聘相关工作",
+    isSystem: true,
+    permissions: [
+      "DASHBOARD",
+      "POST_MANAGE",
+      "POST_CREATE",
+      "POST_EDIT",
+      "CANDIDATE_MANAGE",
+      "CANDIDATE_CREATE",
+      "CANDIDATE_EDIT",
+      "CANDIDATE_IMPORT",
+      "ASSESSMENT_CREATE",
+      "INTERVIEW_MANAGE",
+      "INTERVIEW_CREATE",
+      "INTERVIEW_CANCEL",
+      "ANALYTICS_VIEW",
+      "FILE_UPLOAD",
+    ],
+  },
+  {
+    name: "部门负责人",
+    code: "DEPARTMENT_LEADER",
+    description: "部门负责人，可管理本部门相关事务",
+    isSystem: true,
+    permissions: [
+      "DASHBOARD",
+      "TODO_VIEW",
+      "DEPT_MANAGE_SELF",
+      "ASSESSMENT_ASSIGN",
+      "ASSESSMENT_EXECUTE",
+      "ASSESSMENT_CONFIRM",
+      "INTERVIEW_VIEW",
+      "ANALYTICS_VIEW_DEPT",
+      "FILE_UPLOAD",
+    ],
+  },
+  {
+    name: "面试官",
+    code: "INTERVIEWER",
+    description: "面试官，可执行面试相关工作",
+    isSystem: true,
+    permissions: [
+      "DASHBOARD",
+      "TODO_VIEW",
+      "ASSESSMENT_EXECUTE",
+      "INTERVIEW_VIEW_MY",
+      "INTERVIEW_EXECUTE",
+      "INTERVIEW_FEEDBACK",
+      "FILE_UPLOAD",
+    ],
+  },
+];
+```
+
+这份完善的API接口文档现在包含了所有核心功能模块，包括评估流程、待办事项、组织管理、系统初始化等。每个接口都有详细的权限要求、参数说明和业务逻辑描述，可以作为开发的标准参考。
