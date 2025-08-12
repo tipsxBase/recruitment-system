@@ -5,7 +5,9 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { ScheduleModule } from "@nestjs/schedule";
 import { AuthController } from "./auth.controller";
 import { PermissionController } from "./controllers/permission.controller";
+import { MenuController } from "./controllers/menu.controller";
 import { AuthService } from "./auth.service";
+import { MenuService } from "./services/menu.service";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { LocalStrategy } from "./strategies/local.strategy";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
@@ -35,9 +37,10 @@ import { CleanupTask } from "../common/tasks/cleanup.task";
       inject: [ConfigService],
     }),
   ],
-  controllers: [AuthController, PermissionController],
+  controllers: [AuthController, PermissionController, MenuController],
   providers: [
     AuthService,
+    MenuService,
     LocalStrategy,
     JwtStrategy,
     JwtAuthGuard,
