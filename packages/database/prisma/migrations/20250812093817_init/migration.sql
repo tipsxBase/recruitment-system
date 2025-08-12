@@ -284,6 +284,19 @@ CREATE TABLE "public"."Attachment" (
 );
 
 -- CreateTable
+CREATE TABLE "public"."EmailVerificationCode" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "EmailVerificationCode_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "public"."_PermissionToRole" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
@@ -653,6 +666,15 @@ CREATE INDEX "Attachment_uploaderId_isDeleted_idx" ON "public"."Attachment"("upl
 
 -- CreateIndex
 CREATE INDEX "Attachment_entityType_isDeleted_idx" ON "public"."Attachment"("entityType", "isDeleted");
+
+-- CreateIndex
+CREATE INDEX "EmailVerificationCode_email_idx" ON "public"."EmailVerificationCode"("email");
+
+-- CreateIndex
+CREATE INDEX "EmailVerificationCode_expiresAt_idx" ON "public"."EmailVerificationCode"("expiresAt");
+
+-- CreateIndex
+CREATE INDEX "EmailVerificationCode_email_expiresAt_idx" ON "public"."EmailVerificationCode"("email", "expiresAt");
 
 -- CreateIndex
 CREATE INDEX "_PermissionToRole_B_index" ON "public"."_PermissionToRole"("B");

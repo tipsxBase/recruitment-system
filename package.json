@@ -18,9 +18,8 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
-    "prisma:generate": "pnpm --filter @recruitment/server run prisma:generate",
-    "prisma:migrate": "pnpm --filter @recruitment/server run prisma:migrate:dev",
-    "prisma:studio": "pnpm --filter @recruitment/server run prisma:studio"
+    "prisma:seed": "pnpm --filter @recruitment/database run db:seed",
+    "prisma:generate": "pnpm --filter @recruitment/database run build"
   },
   "keywords": [],
   "author": "",
