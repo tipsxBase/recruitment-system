@@ -9,6 +9,7 @@ import { PrismaClient } from "@recruitment/database";
 import * as bcrypt from "bcryptjs";
 import { EmailService } from "../common/services/email.service";
 import { VerificationCodeService } from "../common/services/verification-code.service";
+import { MenuService } from "./services/menu.service";
 import {
   type LoginRequest,
   type RegisterRequest,
@@ -54,7 +55,8 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,
-    private verificationCodeService: VerificationCodeService
+    private verificationCodeService: VerificationCodeService,
+    private menuService: MenuService
   ) {
     this.prisma = new PrismaClient({
       log: ["query", "info", "warn", "error"],
@@ -181,6 +183,21 @@ export class AuthService {
         throw new UnauthorizedException("用户信息获取失败");
       }
 
+      // 获取分离的权限
+      const [menuPermissions, buttonPermissions] = await Promise.all([
+        this.menuService
+          .getUserMenus(userDetail.id)
+          .then((menus) => menus.map((menu) => menu.code)),
+        this.menuService.getUserPermissions(userDetail.id),
+      ]);
+
+      // 获取所有权限（兼容旧版本）
+      const allPermissions = userDetail.roles.flatMap((userRole) =>
+        userRole.role.permissions.map(
+          (permission) => permission.code || permission.name
+        )
+      );
+
       // 构建返回的用户信息
       const userInfo = {
         id: userDetail.id,
@@ -208,11 +225,9 @@ export class AuthService {
           code: userRole.role.code || "",
           description: userRole.role.description || "",
         })),
-        permissions: userDetail.roles.flatMap((userRole) =>
-          userRole.role.permissions.map(
-            (permission) => permission.code || permission.name
-          )
-        ),
+        permissions: allPermissions,
+        menuPermissions: menuPermissions,
+        buttonPermissions: buttonPermissions,
         createdAt: userDetail.createdAt.toISOString(),
         updatedAt: userDetail.updatedAt.toISOString(),
       };
@@ -416,6 +431,21 @@ export class AuthService {
         throw new UnauthorizedException("用户不存在或已被禁用");
       }
 
+      // 获取分离的权限
+      const [menuPermissions, buttonPermissions] = await Promise.all([
+        this.menuService
+          .getUserMenus(userId)
+          .then((menus) => menus.map((menu) => menu.code)),
+        this.menuService.getUserPermissions(userId),
+      ]);
+
+      // 获取所有权限（兼容旧版本）
+      const allPermissions = user.roles.flatMap((userRole) =>
+        userRole.role.permissions.map(
+          (permission) => permission.code || permission.name
+        )
+      );
+
       return {
         id: user.id,
         username: user.username,
@@ -442,11 +472,9 @@ export class AuthService {
           code: userRole.role.code || "",
           description: userRole.role.description || "",
         })),
-        permissions: user.roles.flatMap((userRole) =>
-          userRole.role.permissions.map(
-            (permission) => permission.code || permission.name
-          )
-        ),
+        permissions: allPermissions,
+        menuPermissions: menuPermissions,
+        buttonPermissions: buttonPermissions,
         createdAt: user.createdAt.toISOString(),
         updatedAt: user.updatedAt.toISOString(),
       };

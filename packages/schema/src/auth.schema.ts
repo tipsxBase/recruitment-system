@@ -95,7 +95,9 @@ export const UserSchema = z.object({
       description: z.string().optional(),
     })
   ),
-  permissions: z.array(z.string()),
+  permissions: z.array(z.string()).describe("所有权限代码列表（兼容旧版本）"),
+  menuPermissions: z.array(z.string()).describe("菜单权限代码列表"),
+  buttonPermissions: z.array(z.string()).describe("按钮权限代码列表"),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
