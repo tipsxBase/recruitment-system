@@ -214,3 +214,14 @@ export type ChangePasswordResponse = z.infer<
 >;
 export type UpdateProfileRequest = z.infer<typeof UpdateProfileRequestSchema>;
 export type UpdateProfileResponse = z.infer<typeof UpdateProfileResponseSchema>;
+
+export type MenuResponse = {
+  code: string;
+  hidden: boolean;
+  id: string;
+  parentId?: string; // 可选的父级菜单ID
+  name: string;
+  sort: number;
+  type: "MENU" | "BUTTON"; // 菜单类型
+  children?: MenuResponse[]; // 可选的子菜单
+};

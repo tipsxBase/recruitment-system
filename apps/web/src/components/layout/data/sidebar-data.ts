@@ -50,158 +50,71 @@ export const sidebarData: SidebarData = {
       plan: "Startup",
     },
   ],
-  navGroups: [
-    {
-      title: "General",
-      items: [
-        {
-          title: "Dashboard",
-          url: "/dashboard",
-          icon: IconLayoutDashboard,
-        },
-        {
-          title: "Interviews",
-          url: "/interviews",
-          icon: IconChecklist,
-        },
-        {
-          title: "Jobs",
-          url: "/jobs",
-          icon: IconPackages,
-        },
-        {
-          title: "Candidates",
-          url: "/candidates",
-          badge: "3",
-          icon: IconMessages,
-        },
-        {
-          title: "Users",
-          url: "/users",
-          icon: IconUsers,
-        },
-        {
-          title: "Secured by Clerk",
-          icon: CircleParking,
-          items: [
-            {
-              title: "Sign In",
-              url: "/clerk/sign-in",
-            },
-            {
-              title: "Sign Up",
-              url: "/clerk/sign-up",
-            },
-            {
-              title: "User Management",
-              url: "/clerk/user-management",
-            },
-          ],
-        },
-      ],
-    },
-    {
-      title: "Pages",
-      items: [
-        {
-          title: "Auth",
-          icon: IconLockAccess,
-          items: [
-            {
-              title: "Sign In",
-              url: "/sign-in",
-            },
-            {
-              title: "Sign In (2 Col)",
-              url: "/sign-in-2",
-            },
-            {
-              title: "Sign Up",
-              url: "/sign-up",
-            },
-            {
-              title: "Forgot Password",
-              url: "/forgot-password",
-            },
-            {
-              title: "OTP",
-              url: "/otp",
-            },
-          ],
-        },
-        {
-          title: "Errors",
-          icon: IconBug,
-          items: [
-            {
-              title: "Unauthorized",
-              url: "/401",
-              icon: IconLock,
-            },
-            {
-              title: "Forbidden",
-              url: "/403",
-              icon: IconUserOff,
-            },
-            {
-              title: "Not Found",
-              url: "/404",
-              icon: IconError404,
-            },
-            {
-              title: "Internal Server Error",
-              url: "/500",
-              icon: IconServerOff,
-            },
-            {
-              title: "Maintenance Error",
-              url: "/503",
-              icon: IconBarrierBlock,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      title: "Other",
-      items: [
-        {
-          title: "Settings",
-          icon: IconSettings,
-          items: [
-            {
-              title: "Profile",
-              url: "/settings",
-              icon: IconUserCog,
-            },
-            {
-              title: "Account",
-              url: "/settings/account",
-              icon: IconTool,
-            },
-            {
-              title: "Appearance",
-              url: "/settings/appearance",
-              icon: IconPalette,
-            },
-            {
-              title: "Notifications",
-              url: "/settings/notifications",
-              icon: IconNotification,
-            },
-            {
-              title: "Display",
-              url: "/settings/display",
-              icon: IconBrowserCheck,
-            },
-          ],
-        },
-        {
-          title: "Help Center",
-          url: "/help-center",
-          icon: IconHelp,
-        },
-      ],
-    },
-  ],
+};
+
+export const getMenuData = (code: string) => {
+  switch (code) {
+    case "perm-dashboard":
+      return {
+        icon: IconLayoutDashboard,
+        path: "/dashboard",
+      };
+    case "perm-system": {
+      return {
+        icon: IconSettings,
+      };
+    }
+    case "perm-user-manage": {
+      return {
+        path: "/users",
+      };
+    }
+    case "perm-dept-manage": {
+      return {
+        path: "/departments",
+      };
+    }
+    case "perm-role-manage": {
+      return {
+        path: "/roles",
+      };
+    }
+    case "perm-org-manage": {
+      return {
+        path: "/organizations",
+      };
+    }
+    case "perm-recruitment": {
+      return {
+        icon: IconChecklist,
+      };
+    }
+    case "perm-post-manage": {
+      return {
+        path: "/posts",
+      };
+    }
+    case "perm-candidate-manage": {
+      return {
+        path: "/candidates",
+      };
+    }
+    case "perm-interview-manage": {
+      return {
+        path: "/interviews",
+      };
+    }
+    case "perm-analytics": {
+      return {
+        icon: IconBrowserCheck,
+        path: "/analytics",
+      };
+    }
+    case "perm-todo-manage": {
+      return {
+        icon: IconChecklist,
+        path: "/todos",
+      };
+    }
+  }
 };

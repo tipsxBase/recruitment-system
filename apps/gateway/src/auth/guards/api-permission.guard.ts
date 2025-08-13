@@ -24,7 +24,9 @@ export class ApiPermissionGuard implements CanActivate {
       ? {
           id: user.sub || user.id,
           email: user.email,
+          // 从 JWT payload 中获取角色代码数组
           roles: user.roles || [],
+          // 从 JWT payload 中获取权限代码数组
           permissions: user.permissions || [],
           departments: user.departments || [],
         }
@@ -34,7 +36,7 @@ export class ApiPermissionGuard implements CanActivate {
     this.logger.debug(`Permission check: ${method} ${path}`, {
       userId: userInfo?.id,
       userRoles: userInfo?.roles,
-      userPermissions: userInfo?.permissions,
+      userPermissions: userInfo?.permissions?.slice(0, 5), // 只记录前5个权限，避免日志过长
     });
 
     // 执行权限检查

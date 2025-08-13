@@ -1,5 +1,17 @@
-import { getProfile } from "@/service/xhr/user";
-import type { User } from "@recruitment/schema";
+import { getMenuData } from "@/components/layout/data/sidebar-data";
+import {
+  getMenu,
+  getProfile,
+  login,
+  logout,
+  register,
+  sendEmail,
+} from "@/service/xhr/user";
+import type {
+  MenuResponse,
+  SendNotificationResponse,
+  User,
+} from "@recruitment/schema";
 import {
   createStore,
   useStore,
@@ -12,7 +24,8 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   isInitialized: boolean; // 新增：标记是否已经初始化过
-
+  menus: MenuResponse[] | null;
+  defaultPath: string; // 新增：默认路径
   // Actions
   setUser: (user: User) => void;
   clearUser: () => void;
@@ -24,6 +37,8 @@ interface AuthState {
     password: string;
     rememberMe?: boolean;
   }) => Promise<void>;
+
+  getMenus: () => Promise<any>;
   register: (data: {
     username: string;
     email: string;
@@ -32,12 +47,10 @@ interface AuthState {
   }) => Promise<void>;
   logout: () => Promise<void>;
   initialLoader: () => Promise<User>;
-  sendVerificationCode: (
-    email: string
-  ) => Promise<{ success: boolean; message: string; expiresIn: number }>;
-}
+  sendVerificationCode: (email: string) => Promise<SendNotificationResponse>;
 
-const API_BASE_URL = "http://localhost:8080/api";
+  isSuperAdmin: () => boolean;
+}
 
 // 用于缓存 initialLoader 的 Promise，避免重复请求
 let initPromise: Promise<User> | null = null;
@@ -47,7 +60,8 @@ export const authStore = createStore<AuthState>()((set, get) => ({
   isAuthenticated: false,
   isLoading: false,
   isInitialized: false,
-
+  menus: null,
+  defaultPath: getMenuData("perm-todo-manage")?.path!, // 默认路径
   setUser: (user) => set({ user, isAuthenticated: true, isInitialized: true }),
   clearUser: () =>
     set({ user: null, isAuthenticated: false, isInitialized: true }),
@@ -91,26 +105,31 @@ export const authStore = createStore<AuthState>()((set, get) => ({
     return initPromise;
   },
 
+  getMenus: async () => {
+    const res = await getMenu();
+    const { data } = res;
+    let defaultPath = getMenuData("perm-todo-manage")?.path!; // 默认路径
+    // 设置默认路径为第一个菜单的路径
+    if (data && data.length > 0) {
+      if (data[0].children && data[0].children.length > 0) {
+        defaultPath = getMenuData(data[0].children[0].id)!.path!;
+      } else {
+        defaultPath = getMenuData(data[0].id)!.path!;
+      }
+    }
+    set({
+      menus: data,
+      defaultPath,
+    });
+  },
+
   login: async (credentials) => {
     try {
       set({ isLoading: true });
 
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // 重要：包含 cookies
-        body: JSON.stringify(credentials),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "登录失败");
-      }
-
-      const data = await response.json();
-      set({ user: data.user, isAuthenticated: true, isInitialized: true });
+      const res = await login(credentials);
+      const { data } = res;
+      set({ user: data!.user, isAuthenticated: true, isInitialized: true });
     } catch (error) {
       throw error;
     } finally {
@@ -121,24 +140,7 @@ export const authStore = createStore<AuthState>()((set, get) => ({
   register: async (registerData) => {
     try {
       set({ isLoading: true });
-
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(registerData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "注册失败");
-      }
-
-      const data = await response.json();
-      // 注册成功后不自动登录，让用户手动登录
-      return data;
+      await register(registerData);
     } catch (error) {
       throw error;
     } finally {
@@ -148,10 +150,7 @@ export const authStore = createStore<AuthState>()((set, get) => ({
 
   logout: async () => {
     try {
-      await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
+      await logout();
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
@@ -162,23 +161,13 @@ export const authStore = createStore<AuthState>()((set, get) => ({
   },
 
   sendVerificationCode: async (email) => {
-    const response = await fetch(
-      `${API_BASE_URL}/auth/send-verification-code`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      }
-    );
+    const response = await sendEmail(email);
+    return response.data!;
+  },
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "发送验证码失败");
-    }
-
-    return response.json();
+  isSuperAdmin: () => {
+    const user = get().user;
+    return !!user?.roles?.some((role) => role.code === "SUPER_ADMIN");
   },
 }));
 

@@ -1,3 +1,4 @@
+import type { MenuResponse } from "@recruitment/schema";
 import { type LinkProps } from "@tanstack/react-router";
 
 interface User {
@@ -31,14 +32,12 @@ type NavCollapsible = BaseNavItem & {
 type NavItem = NavCollapsible | NavLink;
 
 interface NavGroup {
-  title: string;
-  items: NavItem[];
+  menus: MenuResponse[];
 }
 
 interface SidebarData {
   user: User;
   teams: Team[];
-  navGroups: NavGroup[];
 }
 
 export type { SidebarData, NavGroup, NavItem, NavCollapsible, NavLink };

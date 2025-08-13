@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -32,18 +31,19 @@ import {
   type NavLink,
   type NavGroup,
 } from "./types";
+import type { MenuResponse } from "@recruitment/schema";
+import { getMenuData } from "./data/sidebar-data";
 
-export function NavGroup({ title, items }: NavGroup) {
+export function NavGroup({ menus }: NavGroup) {
   const { state, isMobile } = useSidebar();
   const href = useLocation({ select: (location) => location.href });
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>{title}</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => {
-          const key = `${item.title}-${item.url}`;
+        {menus.map((item) => {
+          const key = `${item.id}`;
 
-          if (!item.items)
+          if (!item.children || item.children.length === 0)
             return <SidebarMenuLink key={key} item={item} href={href} />;
 
           if (state === "collapsed" && !isMobile)
@@ -62,19 +62,25 @@ const NavBadge = ({ children }: { children: ReactNode }) => (
   <Badge className="rounded-full px-1 py-0 text-xs">{children}</Badge>
 );
 
-const SidebarMenuLink = ({ item, href }: { item: NavLink; href: string }) => {
+const SidebarMenuLink = ({
+  item,
+  href,
+}: {
+  item: MenuResponse;
+  href: string;
+}) => {
   const { setOpenMobile } = useSidebar();
+  const meta = getMenuData(item.id);
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         asChild
         isActive={checkIsActive(href, item)}
-        tooltip={item.title}
+        tooltip={item.name}
       >
-        <Link to={item.url} onClick={() => setOpenMobile(false)}>
-          {item.icon && <item.icon />}
-          <span>{item.title}</span>
-          {item.badge && <NavBadge>{item.badge}</NavBadge>}
+        <Link to={meta?.path} onClick={() => setOpenMobile(false)}>
+          {meta?.icon && <meta.icon />}
+          <span>{item.name}</span>
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -85,10 +91,11 @@ const SidebarMenuCollapsible = ({
   item,
   href,
 }: {
-  item: NavCollapsible;
+  item: MenuResponse;
   href: string;
 }) => {
   const { setOpenMobile } = useSidebar();
+  const menuMeta = getMenuData(item.id);
   return (
     <Collapsible
       asChild
@@ -97,29 +104,33 @@ const SidebarMenuCollapsible = ({
     >
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
-          <SidebarMenuButton tooltip={item.title}>
-            {item.icon && <item.icon />}
-            <span>{item.title}</span>
-            {item.badge && <NavBadge>{item.badge}</NavBadge>}
+          <SidebarMenuButton tooltip={item.name}>
+            {menuMeta?.icon && <menuMeta.icon />}
+            <span>{item.name}</span>
             <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent className="CollapsibleContent">
           <SidebarMenuSub>
-            {item.items.map((subItem) => (
-              <SidebarMenuSubItem key={subItem.title}>
-                <SidebarMenuSubButton
-                  asChild
-                  isActive={checkIsActive(href, subItem)}
-                >
-                  <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
-                    {subItem.icon && <subItem.icon />}
-                    <span>{subItem.title}</span>
-                    {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
-                  </Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-            ))}
+            {item.children?.map((subItem) => {
+              const subItemMeta = getMenuData(subItem.id);
+              return (
+                <SidebarMenuSubItem key={subItem.id}>
+                  <SidebarMenuSubButton
+                    asChild
+                    isActive={checkIsActive(href, subItem)}
+                  >
+                    <Link
+                      to={subItemMeta?.path}
+                      onClick={() => setOpenMobile(false)}
+                    >
+                      {subItemMeta?.icon && <subItemMeta.icon />}
+                      <span>{subItem.name}</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              );
+            })}
           </SidebarMenuSub>
         </CollapsibleContent>
       </SidebarMenuItem>
@@ -131,55 +142,55 @@ const SidebarMenuCollapsedDropdown = ({
   item,
   href,
 }: {
-  item: NavCollapsible;
+  item: MenuResponse;
   href: string;
 }) => {
+  const menuMeta = getMenuData(item.id);
+
   return (
     <SidebarMenuItem>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <SidebarMenuButton
-            tooltip={item.title}
+            tooltip={item.name}
             isActive={checkIsActive(href, item)}
           >
-            {item.icon && <item.icon />}
-            <span>{item.title}</span>
-            {item.badge && <NavBadge>{item.badge}</NavBadge>}
+            {menuMeta?.icon && <menuMeta.icon />}
+            <span>{item.name}</span>
             <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start" sideOffset={4}>
-          <DropdownMenuLabel>
-            {item.title} {item.badge ? `(${item.badge})` : ""}
-          </DropdownMenuLabel>
+          <DropdownMenuLabel>{item.name}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {item.items.map((sub) => (
-            <DropdownMenuItem key={`${sub.title}-${sub.url}`} asChild>
-              <Link
-                to={sub.url}
-                className={`${checkIsActive(href, sub) ? "bg-secondary" : ""}`}
-              >
-                {sub.icon && <sub.icon />}
-                <span className="max-w-52 text-wrap">{sub.title}</span>
-                {sub.badge && (
-                  <span className="ml-auto text-xs">{sub.badge}</span>
-                )}
-              </Link>
-            </DropdownMenuItem>
-          ))}
+          {item?.children?.map((sub) => {
+            const menuMeta = getMenuData(sub.id);
+            return (
+              <DropdownMenuItem key={sub.id} asChild>
+                <Link
+                  to={menuMeta?.path}
+                  className={`${checkIsActive(href, sub) ? "bg-secondary" : ""}`}
+                >
+                  {menuMeta?.icon && <menuMeta.icon />}
+                  <span className="max-w-52 text-wrap">{sub.name}</span>
+                </Link>
+              </DropdownMenuItem>
+            );
+          })}
         </DropdownMenuContent>
       </DropdownMenu>
     </SidebarMenuItem>
   );
 };
 
-function checkIsActive(href: string, item: NavItem, mainNav = false) {
+function checkIsActive(href: string, item: MenuResponse, mainNav = false) {
+  const meta = getMenuData(item.id);
   return (
-    href === item.url || // /endpint?search=param
-    href.split("?")[0] === item.url || // endpoint
-    !!item?.items?.filter((i) => i.url === href).length || // if child nav is active
+    href === meta?.path || // /endpint?search=param
+    href.split("?")[0] === meta?.path || // endpoint
+    !!item?.children?.filter((i) => meta?.path === href).length || // if child nav is active
     (mainNav &&
       href.split("/")[1] !== "" &&
-      href.split("/")[1] === item?.url?.split("/")[1])
+      href.split("/")[1] === meta?.path?.split("/")[1])
   );
 }

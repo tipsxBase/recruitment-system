@@ -10,6 +10,7 @@ import { Response as ExpressResponse } from "express";
 import { Reflector } from "@nestjs/core";
 import { PAGE_RESPONSE_KEY } from "../decorators/page-response.decorator";
 import { createPaginationResponse, createResponse } from "../tools/response";
+import { ResponseUtils } from "@recruitment/shared";
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
@@ -28,13 +29,12 @@ export class ResponseInterceptor implements NestInterceptor {
           response.status(HttpStatus.OK);
           const { data: records, current, pageSize, total } = data;
 
-          return createPaginationResponse(
+          return ResponseUtils.paginated(
             records,
             total,
             current,
             pageSize,
-            "success",
-            HttpStatus.OK
+            "success"
           );
         })
       );
@@ -43,7 +43,7 @@ export class ResponseInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map((data) => {
         response.status(HttpStatus.OK);
-        return createResponse(data, "success", HttpStatus.OK);
+        return ResponseUtils.success(data, "success");
       })
     );
   }

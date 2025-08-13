@@ -63,22 +63,22 @@ function get<T>(
   return fetchRequest<T>({ url, params, config: { ...config, method: "GET" } });
 }
 
-function post(url: string, body?: any, config?: RequestInit) {
-  return fetchRequest({
+function post<T>(url: string, body?: any, config?: RequestInit) {
+  return fetchRequest<T>({
     url,
     config: { ...config, method: "POST", body: JSON.stringify(body) },
   });
 }
 
-function put(url: string, body?: any, config?: RequestInit) {
-  return fetchRequest({
+function put<T>(url: string, body?: any, config?: RequestInit) {
+  return fetchRequest<T>({
     url,
     config: { ...config, method: "PUT", body: JSON.stringify(body) },
   });
 }
 
-function del(url: string, config?: RequestInit) {
-  return fetchRequest({ url, config: { ...config, method: "DELETE" } });
+function del<T>(url: string, config?: RequestInit) {
+  return fetchRequest<T>({ url, config: { ...config, method: "DELETE" } });
 }
 
 export { get, post, put, del };

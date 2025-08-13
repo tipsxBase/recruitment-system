@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   component: App,
 });
 

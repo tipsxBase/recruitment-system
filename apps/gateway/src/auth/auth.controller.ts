@@ -47,6 +47,7 @@ import {
   LOG_RESULTS,
 } from "../common/constants/operation-log.constants";
 import { ExceptionUtils } from "@/common/exceptions";
+import { ResponseUtils } from "@recruitment/shared";
 
 @Controller("auth")
 @UseGuards(ThrottlerGuard)

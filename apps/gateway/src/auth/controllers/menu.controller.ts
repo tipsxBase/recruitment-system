@@ -23,8 +23,7 @@ export class MenuController {
   async getUserMenus(@Request() req: any) {
     const userId = req.user.sub;
     const menus = await this.menuService.getUserMenus(userId);
-
-    return ResponseUtils.success(menus, "获取菜单成功");
+    return menus;
   }
 
   /**
@@ -39,6 +38,6 @@ export class MenuController {
     const userId = req.user.sub;
     const permissions = await this.menuService.getUserPermissions(userId);
 
-    return ResponseUtils.success(permissions, "获取权限成功");
+    return permissions;
   }
 }

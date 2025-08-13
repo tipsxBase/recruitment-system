@@ -31,6 +31,17 @@ export const Route = createFileRoute("/_authenticated")({
         },
       });
     }
+
+    if (location.pathname === "/") {
+      // 如果是根路径，重定向到默认页面
+      throw redirect({
+        to: state.defaultPath! || "/todos",
+      });
+    }
   },
+  loader: async () => {
+    await authStore.getState().getMenus();
+  },
+  shouldReload: false,
   component: AuthenticatedLayout,
 });

@@ -34,6 +34,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   roles: string[];
+  permissions: string[];
   departments: string[];
 }
 
@@ -42,6 +43,7 @@ export interface AuthUser {
   email: string;
   name: string;
   roles: string[];
+  permissions: string[];
   departments: string[];
   isActive: boolean;
 }
@@ -103,7 +105,7 @@ export class AuthService {
       // 验证密码
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
-        throw new UnauthorizedException("密码错误");
+        throw new UnauthorizedException("用户或密码错误");
       }
 
       // 检查邮箱是否已验证（可选，根据业务需求）
@@ -129,6 +131,7 @@ export class AuthService {
         email: user.email || "",
         name: user.username,
         roles,
+        permissions,
         departments,
         isActive: user.status === "ACTIVE",
       };
@@ -153,6 +156,7 @@ export class AuthService {
         email: authUser.email,
         roles: authUser.roles,
         departments: authUser.departments,
+        permissions: authUser.permissions,
       };
 
       const token = this.jwtService.sign(payload);
@@ -393,6 +397,7 @@ export class AuthService {
       email: decoded.email,
       roles: decoded.roles,
       departments: decoded.departments,
+      permissions: decoded.permissions || [],
     };
 
     const token = this.jwtService.sign(payload);
@@ -517,6 +522,7 @@ export class AuthService {
       email: user.email,
       roles: user.roles,
       departments: user.departments,
+      permissions: user.permissions,
     };
     return this.jwtService.sign(payload);
   }
