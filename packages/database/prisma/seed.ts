@@ -1,17 +1,17 @@
 /**
- * 招聘系统数据库初始化脚本 (Database Seed Script)
+ * 招聘系统数据库初始化脚本 - 新角色架构版本
  *
- * 功能说明：
- * 1. 创建完整的权限体系和角色结构
- * 2. 创建超级管理员账号用于系统管理
+ * 新架构特点：
+ * 1. 超级管理员：唯一系统账号，纯系统管理，不参与业务
+ * 2. 组织管理员：组织内业务管理
+ * 3. 权限明确分离：系统权限 vs 业务权限
  *
- * 使用方法：
- * npm run db:seed 或 pnpm db:seed
- *
- * 注意事项：
- * - 生产环境请立即修改超级管理员默认密码
- * - 系统采用多租户架构，组织数据需要在系统中创建
- *
+ * 角色职责：
+ * - 超级管理员(SUPER_ADMIN): 组织管理、用户分配、系统监控、系统配置（唯一账号）
+ * - 组织管理员(ORG_ADMIN): 组织内用户、部门、招聘等业务管理
+ * - HR管理员(HR_MANAGER): HR专业工作
+ * - 部门负责人(DEPT_LEADER): 部门级招聘管理
+ * - 面试官(INTERVIEWER): 面试执行
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -20,39 +20,39 @@ import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 开始执行系统初始化数据 seed...");
+  console.log("🌱 开始执行新架构系统初始化数据 seed...");
 
   try {
-    // 1. 创建系统权限（必需）
-    // 包含菜单权限和按钮权限，构建完整的权限树结构
-    // 注意：已将"评估管理"功能整合到"待办事项"中，避免功能重复
-    await createPermissions();
+    // 清理现有数据（开发环境）
+    if (process.env.NODE_ENV !== "production") {
+      await cleanDatabase();
+    }
 
-    // 2. 创建内置角色（必需）
-    // 基于权限创建系统预定义角色，支持不同层级的用户管理
-    await createRoles();
+    // 1. 创建新架构权限体系
+    await createNewPermissions();
 
-    // 3. 创建超级管理员（必需）
-    // 系统冷启动必需的超级管理员账号，用于初始系统管理
-    await createSuperAdmin();
+    // 2. 创建新架构角色
+    await createNewRoles();
 
-    console.log("✅ 系统初始化数据 seed 执行完成！");
-    console.log("📝 系统初始化完成，请按以下步骤继续：");
-    console.log(
-      "   1. 使用超级管理员账号登录系统 (superadmin/superadmin@system)"
-    );
-    console.log("   2. 创建第一个组织");
-    console.log("   3. 在组织下创建部门结构");
-    console.log("   4. 创建组织管理员账号");
+    // 3. 创建超级管理员（纯系统管理）
+    await createSystemSuperAdmin();
+
+    console.log("✅ 新架构系统初始化数据 seed 执行完成！");
+    console.log("📝 新架构初始化完成，请按以下步骤继续：");
+    console.log("   1. 使用超级管理员账号登录系统 (superadmin/superadmin@123)");
+    console.log("   2. 超级管理员创建第一个组织");
+    console.log("   3. 在组织下创建组织管理员账号");
+    console.log("   4. 组织管理员创建部门结构和业务用户");
     console.log("   5. 开始正常的招聘业务操作");
     console.log("");
-    console.log("💡 系统特性：");
-    console.log("   - 多租户架构：支持多个组织独立管理");
-    console.log("   - 权限控制：基于角色的精细化权限管理");
-    console.log("   - 招聘流程：候选人 → 评估 → 面试 → 录用");
-    console.log("   - 待办统一：评估和面试任务统一在待办事项中管理");
+    console.log("💡 新架构特性：");
+    console.log("   - 职责分离：超级管理员专管系统，不参与业务");
+    console.log("   - 唯一账号：超级管理员是系统唯一的管理账号");
+    console.log("   - 权限清晰：系统权限与业务权限明确分离");
+    console.log("   - 用户分配：超级管理员负责为注册用户分配组织");
+    console.log("   - 安全性高：避免系统管理与业务管理的权限混淆");
   } catch (error) {
-    console.error("❌ Seed 执行失败:", error);
+    console.error("❌ 新架构 Seed 执行失败:", error);
     throw error;
   }
 }
@@ -60,41 +60,161 @@ async function main() {
 async function cleanDatabase() {
   console.log("🧹 清理现有数据（仅开发环境）...");
 
-  // 按数据库外键依赖关系倒序删除，避免外键约束错误
-  // 最深层级的业务数据先删除
-  await prisma.candidateStatusHistory.deleteMany(); // 候选人状态历史
-  await prisma.interviewTask.deleteMany(); // 面试任务
-  await prisma.interview.deleteMany(); // 面试记录
-  await prisma.departmentAssessment.deleteMany(); // 部门评估
-  await prisma.candidate.deleteMany(); // 候选人
-  await prisma.post.deleteMany(); // 职位
-  await prisma.notification.deleteMany(); // 通知
-  await prisma.operationLog.deleteMany(); // 操作日志
-  await prisma.attachment.deleteMany(); // 附件
-  await prisma.emailVerificationCode.deleteMany(); // 邮箱验证码
-
-  // 用户相关数据
-  await prisma.userRole.deleteMany(); // 用户角色关联
-  await prisma.user.deleteMany(); // 用户
-
-  // 组织架构数据
-  await prisma.department.deleteMany(); // 部门
-
-  // 权限系统数据
-  await prisma.role.deleteMany(); // 角色
-  await prisma.permission.deleteMany(); // 权限
-
-  // 最顶层的组织数据最后删除
-  await prisma.organization.deleteMany(); // 组织
+  // 按依赖关系倒序删除
+  await prisma.candidateStatusHistory.deleteMany();
+  await prisma.interviewTask.deleteMany();
+  await prisma.interview.deleteMany();
+  await prisma.departmentAssessment.deleteMany();
+  await prisma.candidate.deleteMany();
+  await prisma.post.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.operationLog.deleteMany();
+  await prisma.attachment.deleteMany();
+  await prisma.emailVerificationCode.deleteMany();
+  await prisma.userRole.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.department.deleteMany();
+  await prisma.role.deleteMany();
+  await prisma.permission.deleteMany();
 
   console.log("✅ 数据清理完成");
 }
 
-async function createPermissions() {
-  console.log("🔐 创建系统权限...");
+async function createNewPermissions() {
+  console.log("🔐 创建新架构权限体系...");
+
+  // ==================== 系统级权限（仅超级管理员） ====================
+  console.log("   📋 创建系统级权限...");
+
+  // 系统监控菜单
+  const systemMonitorMenu = await prisma.permission.create({
+    data: {
+      id: "perm-system-monitor",
+      name: "系统监控",
+      code: "SYSTEM_MONITOR",
+      type: "MENU",
+    },
+  });
+
+  // 系统配置菜单
+  const systemConfigMenu = await prisma.permission.create({
+    data: {
+      id: "perm-system-config",
+      name: "系统配置",
+      code: "SYSTEM_CONFIG",
+      type: "MENU",
+    },
+  });
+
+  // 组织管理菜单（系统级 - 属于超级管理员）
+  const orgSystemManageMenu = await prisma.permission.create({
+    data: {
+      id: "perm-org-system-manage",
+      name: "组织管理",
+      code: "ORG_SYSTEM_MANAGE",
+      type: "MENU",
+    },
+  });
+
+  // 用户分配管理菜单（系统级 - 属于超级管理员）
+  const userAssignManageMenu = await prisma.permission.create({
+    data: {
+      id: "perm-user-assign-manage",
+      name: "用户分配管理",
+      code: "USER_ASSIGN_MANAGE",
+      type: "MENU",
+    },
+  });
+
+  // 系统级按钮权限
+  await prisma.permission.createMany({
+    data: [
+      // 系统监控按钮
+      {
+        name: "查看系统状态",
+        code: "SYSTEM_STATUS_VIEW",
+        parentId: systemMonitorMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "查看系统日志",
+        code: "SYSTEM_LOG_VIEW",
+        parentId: systemMonitorMenu.id,
+        type: "BUTTON",
+      },
+
+      // 系统配置按钮
+      {
+        name: "数据备份",
+        code: "SYSTEM_BACKUP",
+        parentId: systemConfigMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "数据恢复",
+        code: "SYSTEM_RESTORE",
+        parentId: systemConfigMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "系统设置",
+        code: "SYSTEM_SETTINGS",
+        parentId: systemConfigMenu.id,
+        type: "BUTTON",
+      },
+
+      // 组织管理按钮（系统级）
+      {
+        name: "新增组织",
+        code: "ORG_CREATE",
+        parentId: orgSystemManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "编辑组织",
+        code: "ORG_EDIT",
+        parentId: orgSystemManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "删除组织",
+        code: "ORG_DELETE",
+        parentId: orgSystemManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "查看组织",
+        code: "ORG_VIEW",
+        parentId: orgSystemManageMenu.id,
+        type: "BUTTON",
+      },
+
+      // 用户分配管理按钮（处理无组织用户分配）
+      {
+        name: "为用户分配组织",
+        code: "USER_ASSIGN_ORG",
+        parentId: userAssignManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "转移用户组织",
+        code: "USER_TRANSFER_ORG",
+        parentId: userAssignManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "查看无组织用户",
+        code: "USER_VIEW_UNASSIGNED",
+        parentId: userAssignManageMenu.id,
+        type: "BUTTON",
+      },
+    ],
+  });
+
+  // ==================== 业务级权限（完全保持原有结构） ====================
+  console.log("   📋 创建业务级权限（保持原有结构）...");
 
   // ==================== 一级菜单权限 ====================
-  // 系统核心功能模块的顶级菜单权限
   const dashboardMenu = await prisma.permission.create({
     data: {
       id: "perm-dashboard",
@@ -114,12 +234,11 @@ async function createPermissions() {
   });
 
   // ==================== 系统管理子菜单 ====================
-  // 系统管理模块下的二级菜单权限
-  const userManageMenu = await prisma.permission.create({
+  const orgUserManageMenu = await prisma.permission.create({
     data: {
-      id: "perm-user-manage",
-      name: "用户管理",
-      code: "USER_MANAGE",
+      id: "perm-org-user-manage",
+      name: "组织用户管理",
+      code: "ORG_USER_MANAGE",
       type: "MENU",
       parentId: systemMenu.id,
     },
@@ -145,16 +264,6 @@ async function createPermissions() {
     },
   });
 
-  const orgManageMenu = await prisma.permission.create({
-    data: {
-      id: "perm-org-manage",
-      name: "组织管理",
-      code: "ORG_MANAGE",
-      type: "MENU",
-      parentId: systemMenu.id,
-    },
-  });
-
   // ==================== 招聘管理菜单 ====================
   const recruitmentMenu = await prisma.permission.create({
     data: {
@@ -166,7 +275,6 @@ async function createPermissions() {
   });
 
   // ==================== 招聘管理子菜单 ====================
-  // 招聘业务模块下的二级菜单权限
   const postManageMenu = await prisma.permission.create({
     data: {
       id: "perm-post-manage",
@@ -216,190 +324,312 @@ async function createPermissions() {
     },
   });
 
-  // ==================== 按钮权限定义 ====================
-  // 各功能模块下的具体操作权限
-  const buttonPermissions = [
-    // 用户管理相关按钮权限
-    { name: "新增用户", code: "USER_CREATE", parentId: userManageMenu.id },
-    { name: "编辑用户", code: "USER_EDIT", parentId: userManageMenu.id },
-    { name: "删除用户", code: "USER_DELETE", parentId: userManageMenu.id },
-    {
-      name: "重置密码",
-      code: "USER_RESET_PASSWORD",
-      parentId: userManageMenu.id,
-    },
-    { name: "导入用户", code: "USER_IMPORT", parentId: userManageMenu.id },
-    { name: "导出用户", code: "USER_EXPORT", parentId: userManageMenu.id },
-
-    // 部门管理相关按钮权限
-    { name: "新增部门", code: "DEPT_CREATE", parentId: deptManageMenu.id },
-    { name: "编辑部门", code: "DEPT_EDIT", parentId: deptManageMenu.id },
-    { name: "删除部门", code: "DEPT_DELETE", parentId: deptManageMenu.id },
-
-    // 角色管理相关按钮权限
-    { name: "新增角色", code: "ROLE_CREATE", parentId: roleManageMenu.id },
-    { name: "编辑角色", code: "ROLE_EDIT", parentId: roleManageMenu.id },
-    { name: "删除角色", code: "ROLE_DELETE", parentId: roleManageMenu.id },
-    {
-      name: "分配权限",
-      code: "ROLE_ASSIGN_PERMISSION",
-      parentId: roleManageMenu.id,
-    },
-
-    // 组织管理相关按钮权限
-    { name: "新增组织", code: "ORG_CREATE", parentId: orgManageMenu.id },
-    { name: "编辑组织", code: "ORG_EDIT", parentId: orgManageMenu.id },
-    { name: "删除组织", code: "ORG_DELETE", parentId: orgManageMenu.id },
-
-    // 岗位管理相关按钮权限
-    { name: "新增岗位", code: "POST_CREATE", parentId: postManageMenu.id },
-    { name: "编辑岗位", code: "POST_EDIT", parentId: postManageMenu.id },
-    { name: "删除岗位", code: "POST_DELETE", parentId: postManageMenu.id },
-    {
-      name: "岗位状态变更",
-      code: "POST_STATUS_CHANGE",
-      parentId: postManageMenu.id,
-    },
-
-    // 候选人管理相关按钮权限
-    {
-      name: "新增候选人",
-      code: "CANDIDATE_CREATE",
-      parentId: candidateManageMenu.id,
-    },
-    {
-      name: "编辑候选人",
-      code: "CANDIDATE_EDIT",
-      parentId: candidateManageMenu.id,
-    },
-    {
-      name: "删除候选人",
-      code: "CANDIDATE_DELETE",
-      parentId: candidateManageMenu.id,
-    },
-    {
-      name: "候选人状态变更",
-      code: "CANDIDATE_STATUS_CHANGE",
-      parentId: candidateManageMenu.id,
-    },
-    {
-      name: "导入候选人",
-      code: "CANDIDATE_IMPORT",
-      parentId: candidateManageMenu.id,
-    },
-    {
-      name: "导出候选人",
-      code: "CANDIDATE_EXPORT",
-      parentId: candidateManageMenu.id,
-    },
-
-    // 面试管理相关按钮权限
-    {
-      name: "创建面试",
-      code: "INTERVIEW_CREATE",
-      parentId: interviewManageMenu.id,
-    },
-    {
-      name: "编辑面试",
-      code: "INTERVIEW_EDIT",
-      parentId: interviewManageMenu.id,
-    },
-    {
-      name: "取消面试",
-      code: "INTERVIEW_CANCEL",
-      parentId: interviewManageMenu.id,
-    },
-    {
-      name: "开始面试",
-      code: "INTERVIEW_START",
-      parentId: interviewManageMenu.id,
-    },
-    {
-      name: "提交反馈",
-      code: "INTERVIEW_FEEDBACK",
-      parentId: interviewManageMenu.id,
-    },
-
-    // ==================== 待办事项相关权限 ====================
-    // 优化后的待办权限，统一管理评估和面试等任务
-    { name: "查看待办", code: "TODO_VIEW", parentId: todoManageMenu.id },
-    {
-      name: "分配评估",
-      code: "ASSESSMENT_ASSIGN",
-      parentId: todoManageMenu.id,
-    },
-    {
-      name: "执行评估",
-      code: "ASSESSMENT_EXECUTE",
-      parentId: todoManageMenu.id,
-    },
-    {
-      name: "确认评估",
-      code: "ASSESSMENT_CONFIRM",
-      parentId: todoManageMenu.id,
-    },
-
-    // 通用功能权限（不归属特定菜单）
-    { name: "上传文件", code: "FILE_UPLOAD", parentId: null },
-    { name: "删除文件", code: "FILE_DELETE", parentId: null },
-
-    // 统计分析相关权限
-    { name: "查看统计", code: "ANALYTICS_VIEW", parentId: analyticsMenu.id },
-    {
-      name: "查看部门统计",
-      code: "ANALYTICS_VIEW_DEPT",
-      parentId: analyticsMenu.id,
-    },
-
-    // 系统日志权限
-    { name: "查看日志", code: "LOG_VIEW", parentId: systemMenu.id },
-  ];
-
-  // 批量创建按钮权限
-  for (const perm of buttonPermissions) {
-    await prisma.permission.create({
-      data: {
-        id: `perm-${perm.code.toLowerCase().replace(/_/g, "-")}`,
-        name: perm.name,
-        code: perm.code,
+  // ==================== 按钮权限定义（完全保持原有） ====================
+  await prisma.permission.createMany({
+    data: [
+      // 组织用户管理相关按钮权限（区别于系统用户管理）
+      {
+        name: "新增用户",
+        code: "ORG_USER_CREATE",
+        parentId: orgUserManageMenu.id,
         type: "BUTTON",
-        parentId: perm.parentId,
       },
-    });
-  }
+      {
+        name: "邀请用户",
+        code: "ORG_USER_INVITE",
+        parentId: orgUserManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "编辑用户",
+        code: "ORG_USER_EDIT",
+        parentId: orgUserManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "删除用户",
+        code: "ORG_USER_DELETE",
+        parentId: orgUserManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "重置密码",
+        code: "ORG_USER_RESET_PASSWORD",
+        parentId: orgUserManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "停用用户",
+        code: "ORG_USER_DISABLE",
+        parentId: orgUserManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "启用用户",
+        code: "ORG_USER_ENABLE",
+        parentId: orgUserManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "导入用户",
+        code: "ORG_USER_IMPORT",
+        parentId: orgUserManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "导出用户",
+        code: "ORG_USER_EXPORT",
+        parentId: orgUserManageMenu.id,
+        type: "BUTTON",
+      },
 
-  console.log("✅ 系统权限创建完成");
-  console.log(`   📊 共创建 ${4} 个一级菜单`);
-  console.log(`   📁 共创建 ${7} 个二级菜单`);
-  console.log(`   🔘 共创建 ${buttonPermissions.length} 个按钮权限`);
+      // 部门管理相关按钮权限
+      {
+        name: "新增部门",
+        code: "DEPT_CREATE",
+        parentId: deptManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "编辑部门",
+        code: "DEPT_EDIT",
+        parentId: deptManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "删除部门",
+        code: "DEPT_DELETE",
+        parentId: deptManageMenu.id,
+        type: "BUTTON",
+      },
+
+      // 角色管理相关按钮权限
+      {
+        name: "新增角色",
+        code: "ROLE_CREATE",
+        parentId: roleManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "编辑角色",
+        code: "ROLE_EDIT",
+        parentId: roleManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "删除角色",
+        code: "ROLE_DELETE",
+        parentId: roleManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "分配权限",
+        code: "ROLE_ASSIGN_PERMISSION",
+        parentId: roleManageMenu.id,
+        type: "BUTTON",
+      },
+
+      // 岗位管理相关按钮权限
+      {
+        name: "新增岗位",
+        code: "POST_CREATE",
+        parentId: postManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "编辑岗位",
+        code: "POST_EDIT",
+        parentId: postManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "删除岗位",
+        code: "POST_DELETE",
+        parentId: postManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "岗位状态变更",
+        code: "POST_STATUS_CHANGE",
+        parentId: postManageMenu.id,
+        type: "BUTTON",
+      },
+
+      // 候选人管理相关按钮权限
+      {
+        name: "新增候选人",
+        code: "CANDIDATE_CREATE",
+        parentId: candidateManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "编辑候选人",
+        code: "CANDIDATE_EDIT",
+        parentId: candidateManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "删除候选人",
+        code: "CANDIDATE_DELETE",
+        parentId: candidateManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "候选人状态变更",
+        code: "CANDIDATE_STATUS_CHANGE",
+        parentId: candidateManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "导入候选人",
+        code: "CANDIDATE_IMPORT",
+        parentId: candidateManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "导出候选人",
+        code: "CANDIDATE_EXPORT",
+        parentId: candidateManageMenu.id,
+        type: "BUTTON",
+      },
+
+      // 面试管理相关按钮权限
+      {
+        name: "创建面试",
+        code: "INTERVIEW_CREATE",
+        parentId: interviewManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "编辑面试",
+        code: "INTERVIEW_EDIT",
+        parentId: interviewManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "取消面试",
+        code: "INTERVIEW_CANCEL",
+        parentId: interviewManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "开始面试",
+        code: "INTERVIEW_START",
+        parentId: interviewManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "提交反馈",
+        code: "INTERVIEW_FEEDBACK",
+        parentId: interviewManageMenu.id,
+        type: "BUTTON",
+      },
+
+      // ==================== 待办事项相关权限 ====================
+      {
+        name: "查看待办",
+        code: "TODO_VIEW",
+        parentId: todoManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "分配评估",
+        code: "ASSESSMENT_ASSIGN",
+        parentId: todoManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "执行评估",
+        code: "ASSESSMENT_EXECUTE",
+        parentId: todoManageMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "确认评估",
+        code: "ASSESSMENT_CONFIRM",
+        parentId: todoManageMenu.id,
+        type: "BUTTON",
+      },
+
+      // 通用功能权限
+      { name: "上传文件", code: "FILE_UPLOAD", parentId: null, type: "BUTTON" },
+      { name: "删除文件", code: "FILE_DELETE", parentId: null, type: "BUTTON" },
+
+      // 统计分析相关权限
+      {
+        name: "查看统计",
+        code: "ANALYTICS_VIEW",
+        parentId: analyticsMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "查看部门统计",
+        code: "ANALYTICS_VIEW_DEPT",
+        parentId: analyticsMenu.id,
+        type: "BUTTON",
+      },
+      {
+        name: "导出统计",
+        code: "ANALYTICS_EXPORT",
+        parentId: analyticsMenu.id,
+        type: "BUTTON",
+      },
+    ],
+  });
+
+  console.log("✅ 新架构权限体系创建完成");
 }
 
-async function createRoles() {
-  console.log("👥 创建系统内置角色...");
+async function createNewRoles() {
+  console.log("🎭 创建新架构角色...");
 
-  // 获取所有已创建的权限，用于角色权限分配
+  // 获取所有权限
   const allPermissions = await prisma.permission.findMany();
 
-  // ==================== 超级管理员角色 ====================
-  // 系统最高权限角色，拥有所有权限，用于系统初始化和紧急管理
+  // ==================== 超级管理员角色（新架构：只有系统级权限） ====================
+  // 只拥有系统级权限，包括组织管理和用户分配管理，不参与具体业务
+  const systemPermissions = allPermissions.filter(
+    (p) =>
+      p.code?.includes("SYSTEM_") ||
+      p.code?.includes("ORG_CREATE") ||
+      p.code?.includes("ORG_EDIT") ||
+      p.code?.includes("ORG_DELETE") ||
+      p.code?.includes("ORG_VIEW") ||
+      p.code === "ORG_SYSTEM_MANAGE" ||
+      p.code === "USER_ASSIGN_MANAGE" ||
+      p.code?.includes("USER_ASSIGN_ORG") ||
+      p.code?.includes("USER_TRANSFER_ORG") ||
+      p.code?.includes("USER_VIEW_UNASSIGNED")
+  );
+
   const superAdmin = await prisma.role.create({
     data: {
       id: "role-super-admin",
       name: "超级管理员",
       code: "SUPER_ADMIN",
-      description: "系统超级管理员，拥有所有权限，用于系统初始化和紧急管理",
+      description:
+        "系统唯一超级管理员账号，负责组织管理、用户分配和系统配置，不参与业务流程",
       isSystem: true,
       permissions: {
-        connect: allPermissions.map((p) => ({ id: p.id })),
+        connect: systemPermissions.map((p) => ({ id: p.id })),
       },
     },
   });
 
-  // ==================== 组织管理员角色 ====================
-  // 组织级别的管理员，在组织内拥有几乎所有权限
-  // 排除：创建/删除组织（避免影响其他组织）
+  // ==================== 组织管理员角色（保持原有，但排除组织管理） ====================
+  // 拥有组织内部业务权限，不包含系统级权限和组织管理权限
   const orgAdminPermissions = allPermissions.filter(
-    (p) => !p.code?.includes("ORG_CREATE") && !p.code?.includes("ORG_DELETE")
+    (p) =>
+      !p.code?.includes("ORG_CREATE") &&
+      !p.code?.includes("ORG_DELETE") &&
+      !p.code?.includes("ORG_EDIT") &&
+      !p.code?.includes("ORG_VIEW") &&
+      !p.code?.includes("SYSTEM_") &&
+      p.code !== "ORG_SYSTEM_MANAGE" &&
+      p.code !== "USER_ASSIGN_MANAGE" &&
+      !p.code?.includes("USER_ASSIGN_ORG") &&
+      !p.code?.includes("USER_TRANSFER_ORG") &&
+      !p.code?.includes("USER_VIEW_UNASSIGNED")
   );
 
   const orgAdmin = await prisma.role.create({
@@ -416,8 +646,7 @@ async function createRoles() {
     },
   });
 
-  // ==================== HR专员角色 ====================
-  // 人力资源专员，主要负责招聘流程的管理和执行
+  // ==================== HR专员角色（保持原有） ====================
   const hrPermissions = allPermissions.filter((p) => {
     const code = p.code || "";
     return [
@@ -470,8 +699,7 @@ async function createRoles() {
     },
   });
 
-  // ==================== 部门负责人角色 ====================
-  // 部门负责人，主要负责本部门的评估和面试工作
+  // ==================== 部门负责人角色（保持原有） ====================
   const deptLeaderPermissions = allPermissions.filter((p) => {
     const code = p.code || "";
     return [
@@ -511,8 +739,7 @@ async function createRoles() {
     },
   });
 
-  // ==================== 面试官角色 ====================
-  // 面试官，主要负责执行面试和评估工作
+  // ==================== 面试官角色（保持原有） ====================
   const interviewerPermissions = allPermissions.filter((p) => {
     const code = p.code || "";
     return [
@@ -549,55 +776,58 @@ async function createRoles() {
     },
   });
 
-  console.log("✅ 系统角色创建完成");
-  console.log(`   👑 超级管理员：${allPermissions.length} 个权限`);
+  console.log("✅ 新架构角色创建完成");
+  console.log(
+    `   👑 超级管理员：${systemPermissions.length} 个权限（仅系统级）`
+  );
   console.log(`   🏢 组织管理员：${orgAdminPermissions.length} 个权限`);
-  console.log(`   👔 HR专员：${hrPermissions.length} 个权限`);
+  console.log(`   � HR专员：${hrPermissions.length} 个权限`);
   console.log(`   👨‍💼 部门负责人：${deptLeaderPermissions.length} 个权限`);
   console.log(`   🎯 面试官：${interviewerPermissions.length} 个权限`);
 }
 
-async function createSuperAdmin() {
-  console.log("🔑 创建超级管理员账号...");
+async function createSystemSuperAdmin() {
+  console.log("🔑 创建系统超级管理员账号...");
 
-  // ==================== 密码加密 ====================
-  // 使用bcrypt对默认密码进行加密，提高安全性
-  // 默认密码：superadmin@system
-  const hashedPassword = await bcrypt.hash("superadmin@system", 10);
+  // 创建密码哈希
+  const hashedPassword = await bcrypt.hash("superadmin@123", 10);
 
-  // ==================== 创建超级管理员用户 ====================
-  // 系统冷启动必需的管理员账号，用于后续的组织和用户管理
-  const superAdmin = await prisma.user.create({
+  // 创建超级管理员用户
+  const superAdminUser = await prisma.user.create({
     data: {
       id: "user-super-admin",
-      username: "superadmin", // 登录用户名
-      password: hashedPassword, // 加密后的密码
-      email: "superadmin@system.local", // 系统邮箱
-      emailVerified: true, // 邮箱已验证
-      employeeNo: "SUPER001", // 员工编号
-      status: "ACTIVE", // 账号状态：激活
-      // 注意：超级管理员不归属任何组织和部门
-      // 这样可以跨组织进行管理
+      username: "superadmin",
+      email: "superadmin@system.local",
+      emailVerified: true, // 系统账号默认邮箱已验证
+      phone: null,
+      password: hashedPassword,
+      status: "ACTIVE",
+      // 超级管理员不归属任何部门
+      departmentId: null,
     },
   });
 
-  // ==================== 分配超级管理员角色 ====================
-  // 将用户与超级管理员角色进行关联
+  // 分配超级管理员角色
+  const superAdminRole = await prisma.role.findUnique({
+    where: { code: "SUPER_ADMIN" },
+  });
+
   await prisma.userRole.create({
     data: {
-      userId: superAdmin.id,
-      roleId: "role-super-admin",
+      userId: superAdminUser.id,
+      roleId: superAdminRole!.id,
     },
   });
 
-  console.log("✅ 超级管理员账号创建完成");
-  console.log("   📧 邮箱: superadmin@system.local");
-  console.log("   � 用户名: superadmin");
+  console.log("✅ 系统超级管理员账号创建完成");
+  console.log("   📧 用户名: superadmin");
+  console.log("   🔐 密码: superadmin@123");
+  console.log("   🎯 职责: 纯系统管理，不参与业务");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seed 脚本执行失败:", e);
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

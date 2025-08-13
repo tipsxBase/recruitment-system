@@ -1,8 +1,10 @@
 import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
+import NotFoundError from "@/components/not-found";
 import { authStore } from "@/stores/auth";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated")({
+  notFoundComponent: NotFoundError,
   beforeLoad: async ({ location }) => {
     const state = authStore.getState();
 
@@ -38,9 +40,6 @@ export const Route = createFileRoute("/_authenticated")({
         to: state.defaultPath! || "/todos",
       });
     }
-  },
-  loader: async () => {
-    await authStore.getState().getMenus();
   },
   shouldReload: false,
   component: AuthenticatedLayout,

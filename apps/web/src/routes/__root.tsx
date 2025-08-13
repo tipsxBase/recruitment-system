@@ -1,8 +1,10 @@
+import NotFoundError from "@/components/not-found";
 import { authStore } from "@/stores/auth";
 import { Outlet, createRootRoute } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 export const Route = createRootRoute({
+  notFoundComponent: NotFoundError,
   component: RootComponent,
   // 由于我们在 main.tsx 中已经初始化了用户状态，这里可以简化
   loader: async () => {

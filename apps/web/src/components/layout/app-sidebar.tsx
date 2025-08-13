@@ -12,13 +12,15 @@ import { sidebarData } from "./data/sidebar-data";
 import { useAuthStore } from "@/stores/auth";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { menus } = useAuthStore();
+  const { menus, isSuperAdmin } = useAuthStore();
 
   return (
     <Sidebar collapsible="icon" variant="floating" {...props}>
-      <SidebarHeader>
-        <TeamSwitcher teams={sidebarData.teams} />
-      </SidebarHeader>
+      {!isSuperAdmin() && (
+        <SidebarHeader>
+          <TeamSwitcher teams={sidebarData.teams} />
+        </SidebarHeader>
+      )}
 
       <SidebarContent>
         <NavGroup menus={menus!} />

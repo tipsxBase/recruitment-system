@@ -54,6 +54,36 @@ export const sidebarData: SidebarData = {
 
 export const getMenuData = (code: string) => {
   switch (code) {
+    /** 超级管理员 */
+    case "perm-system-monitor": {
+      return {
+        icon: IconServerOff,
+        path: "/system-monitor",
+      };
+    }
+
+    case "perm-system-config": {
+      return {
+        icon: IconSettings,
+        path: "/system-config",
+      };
+    }
+
+    case "perm-org-system-manage": {
+      return {
+        icon: IconBarrierBlock,
+        path: "/org-system-manage",
+      };
+    }
+
+    case "perm-user-assign-manage": {
+      return {
+        icon: IconUsers,
+        path: "/user-assign-manage",
+      };
+    }
+
+    /** 业务用户 */
     case "perm-dashboard":
       return {
         icon: IconLayoutDashboard,

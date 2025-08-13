@@ -11,7 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedUserAssignManageRouteImport } from './routes/_authenticated/user-assign-manage'
 import { Route as AuthenticatedTodosRouteImport } from './routes/_authenticated/todos'
+import { Route as AuthenticatedSystemMonitorRouteImport } from './routes/_authenticated/system-monitor'
+import { Route as AuthenticatedSystemConfigRouteImport } from './routes/_authenticated/system-config'
+import { Route as AuthenticatedOrgSystemManageRouteImport } from './routes/_authenticated/org-system-manage'
 import { Route as AuthenticatedJobsRouteImport } from './routes/_authenticated/jobs'
 import { Route as AuthenticatedInterviewsRouteImport } from './routes/_authenticated/interviews'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -30,11 +34,35 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedUserAssignManageRoute =
+  AuthenticatedUserAssignManageRouteImport.update({
+    id: '/user-assign-manage',
+    path: '/user-assign-manage',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTodosRoute = AuthenticatedTodosRouteImport.update({
   id: '/todos',
   path: '/todos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSystemMonitorRoute =
+  AuthenticatedSystemMonitorRouteImport.update({
+    id: '/system-monitor',
+    path: '/system-monitor',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSystemConfigRoute =
+  AuthenticatedSystemConfigRouteImport.update({
+    id: '/system-config',
+    path: '/system-config',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOrgSystemManageRoute =
+  AuthenticatedOrgSystemManageRouteImport.update({
+    id: '/org-system-manage',
+    path: '/org-system-manage',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedJobsRoute = AuthenticatedJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
@@ -85,7 +113,11 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/interviews': typeof AuthenticatedInterviewsRoute
   '/jobs': typeof AuthenticatedJobsRoute
+  '/org-system-manage': typeof AuthenticatedOrgSystemManageRoute
+  '/system-config': typeof AuthenticatedSystemConfigRoute
+  '/system-monitor': typeof AuthenticatedSystemMonitorRoute
   '/todos': typeof AuthenticatedTodosRoute
+  '/user-assign-manage': typeof AuthenticatedUserAssignManageRoute
   '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesByTo {
@@ -97,7 +129,11 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/interviews': typeof AuthenticatedInterviewsRoute
   '/jobs': typeof AuthenticatedJobsRoute
+  '/org-system-manage': typeof AuthenticatedOrgSystemManageRoute
+  '/system-config': typeof AuthenticatedSystemConfigRoute
+  '/system-monitor': typeof AuthenticatedSystemMonitorRoute
   '/todos': typeof AuthenticatedTodosRoute
+  '/user-assign-manage': typeof AuthenticatedUserAssignManageRoute
   '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
@@ -111,7 +147,11 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/interviews': typeof AuthenticatedInterviewsRoute
   '/_authenticated/jobs': typeof AuthenticatedJobsRoute
+  '/_authenticated/org-system-manage': typeof AuthenticatedOrgSystemManageRoute
+  '/_authenticated/system-config': typeof AuthenticatedSystemConfigRoute
+  '/_authenticated/system-monitor': typeof AuthenticatedSystemMonitorRoute
   '/_authenticated/todos': typeof AuthenticatedTodosRoute
+  '/_authenticated/user-assign-manage': typeof AuthenticatedUserAssignManageRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
@@ -125,7 +165,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interviews'
     | '/jobs'
+    | '/org-system-manage'
+    | '/system-config'
+    | '/system-monitor'
     | '/todos'
+    | '/user-assign-manage'
     | '/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -137,7 +181,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/interviews'
     | '/jobs'
+    | '/org-system-manage'
+    | '/system-config'
+    | '/system-monitor'
     | '/todos'
+    | '/user-assign-manage'
     | '/'
   id:
     | '__root__'
@@ -150,7 +198,11 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/interviews'
     | '/_authenticated/jobs'
+    | '/_authenticated/org-system-manage'
+    | '/_authenticated/system-config'
+    | '/_authenticated/system-monitor'
     | '/_authenticated/todos'
+    | '/_authenticated/user-assign-manage'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
@@ -178,11 +230,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/user-assign-manage': {
+      id: '/_authenticated/user-assign-manage'
+      path: '/user-assign-manage'
+      fullPath: '/user-assign-manage'
+      preLoaderRoute: typeof AuthenticatedUserAssignManageRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/todos': {
       id: '/_authenticated/todos'
       path: '/todos'
       fullPath: '/todos'
       preLoaderRoute: typeof AuthenticatedTodosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/system-monitor': {
+      id: '/_authenticated/system-monitor'
+      path: '/system-monitor'
+      fullPath: '/system-monitor'
+      preLoaderRoute: typeof AuthenticatedSystemMonitorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/system-config': {
+      id: '/_authenticated/system-config'
+      path: '/system-config'
+      fullPath: '/system-config'
+      preLoaderRoute: typeof AuthenticatedSystemConfigRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/org-system-manage': {
+      id: '/_authenticated/org-system-manage'
+      path: '/org-system-manage'
+      fullPath: '/org-system-manage'
+      preLoaderRoute: typeof AuthenticatedOrgSystemManageRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/jobs': {
@@ -249,7 +329,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInterviewsRoute: typeof AuthenticatedInterviewsRoute
   AuthenticatedJobsRoute: typeof AuthenticatedJobsRoute
+  AuthenticatedOrgSystemManageRoute: typeof AuthenticatedOrgSystemManageRoute
+  AuthenticatedSystemConfigRoute: typeof AuthenticatedSystemConfigRoute
+  AuthenticatedSystemMonitorRoute: typeof AuthenticatedSystemMonitorRoute
   AuthenticatedTodosRoute: typeof AuthenticatedTodosRoute
+  AuthenticatedUserAssignManageRoute: typeof AuthenticatedUserAssignManageRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
@@ -258,7 +342,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInterviewsRoute: AuthenticatedInterviewsRoute,
   AuthenticatedJobsRoute: AuthenticatedJobsRoute,
+  AuthenticatedOrgSystemManageRoute: AuthenticatedOrgSystemManageRoute,
+  AuthenticatedSystemConfigRoute: AuthenticatedSystemConfigRoute,
+  AuthenticatedSystemMonitorRoute: AuthenticatedSystemMonitorRoute,
   AuthenticatedTodosRoute: AuthenticatedTodosRoute,
+  AuthenticatedUserAssignManageRoute: AuthenticatedUserAssignManageRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
