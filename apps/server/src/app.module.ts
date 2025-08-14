@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER } from '@nestjs/core';
 import { PrismaService } from './prisma.service';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { UsersModule } from './users/users.module';
 import { CandidatesModule } from './candidates/candidates.module';
 import { PostsModule } from './posts/posts.module';
@@ -32,7 +34,13 @@ import { OrganizationsModule } from './organizations/organizations.module';
     OrganizationsModule,
   ],
   controllers: [],
-  providers: [PrismaService],
+  providers: [
+    PrismaService,
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+  ],
   exports: [PrismaService],
 })
 export class AppModule {}

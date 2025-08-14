@@ -5,9 +5,10 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-} from "@nestjs/common";
-import { HttpAdapterHost } from "@nestjs/core";
-import { Request, Response } from "express";
+} from '@nestjs/common';
+import { HttpAdapterHost } from '@nestjs/core';
+import { Request, Response } from 'express';
+import { ZodError } from 'zod';
 
 interface ErrorResponse {
   success: boolean;
@@ -35,43 +36,45 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let message: string;
     let errorDetails: any = null;
 
+    // 处理 Zod 验证错误
+    if (exception instanceof ZodError) {
+      httpStatus = HttpStatus.BAD_REQUEST;
+      message = '请求参数验证失败';
+      errorDetails = {
+        type: 'ValidationError',
+        validationErrors: exception.errors.map((error) => ({
+          field: error.path.join('.'),
+          message: error.message,
+          code: error.code,
+          ...('received' in error && { received: error.received }),
+        })),
+      };
+    }
     // 处理 HTTP 异常
-    if (exception instanceof HttpException) {
+    else if (exception instanceof HttpException) {
       httpStatus = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
-      if (typeof exceptionResponse === "string") {
+      if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
       } else if (
-        typeof exceptionResponse === "object" &&
+        typeof exceptionResponse === 'object' &&
         exceptionResponse !== null
       ) {
         const responseObj = exceptionResponse as any;
-
-        // 检查是否是从 Server 端传递过来的格式化错误
-        if (responseObj.success === false && responseObj.data) {
-          // 这是从 Server 端传递过来的已格式化错误，直接使用其数据
-          message = responseObj.message || "请求处理失败";
-          errorDetails = responseObj.data;
-        } else {
-          // 处理标准的 HttpException 响应
-          message = responseObj.message || responseObj.error || "请求处理失败";
-          errorDetails =
-            responseObj.details ||
-            responseObj.errors ||
-            responseObj.data ||
-            null;
-        }
+        message = responseObj.message || responseObj.error || '请求处理失败';
+        errorDetails = responseObj.details || responseObj.errors || null;
       } else {
-        message = "请求处理失败";
+        message = '请求处理失败';
       }
-    } else {
-      // 处理其他类型的异常
+    }
+    // 处理其他类型的异常
+    else {
       httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
-      message = "服务器内部错误";
+      message = '服务器内部错误';
 
       // 在开发环境下显示详细错误信息
-      if (process.env.NODE_ENV === "development") {
+      if (process.env.NODE_ENV === 'development') {
         if (exception instanceof Error) {
           message = exception.message;
           errorDetails = {
@@ -103,20 +106,24 @@ export class HttpExceptionFilter implements ExceptionFilter {
   private logError(
     exception: unknown,
     request: Request,
-    statusCode: number
+    statusCode: number,
   ): void {
     const { method, url, ip } = request;
-    const userAgent = request.get("User-Agent") || "";
+    const userAgent = request.get('User-Agent') || '';
 
-    let errorMessage = "";
-    let stack = "";
+    let errorMessage = '';
+    let stack = '';
 
-    if (exception instanceof HttpException) {
+    if (exception instanceof ZodError) {
+      errorMessage = `Validation failed: ${exception.errors
+        .map((e) => `${e.path.join('.')}: ${e.message}`)
+        .join(', ')}`;
+    } else if (exception instanceof HttpException) {
       errorMessage = exception.message;
-      stack = exception.stack || "";
+      stack = exception.stack || '';
     } else if (exception instanceof Error) {
       errorMessage = exception.message;
-      stack = exception.stack || "";
+      stack = exception.stack || '';
     } else {
       errorMessage = String(exception);
     }
