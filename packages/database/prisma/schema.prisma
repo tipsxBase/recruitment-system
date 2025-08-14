@@ -8,31 +8,43 @@ datasource db {
 }
 
 model User {
-  id             String                 @id @default(uuid()) /// 主键
-  username       String                 @unique /// 用户名，唯一
-  password       String /// 密码（加密存储，推荐使用 bcrypt）
-  email          String?                @unique /// 邮箱，可选
-  emailVerified  Boolean                @default(false) /// 邮箱是否已激活
-  employeeNo     String?                @unique /// 工号，唯一
-  phone          String?                @unique /// 手机号，唯一
-  status         UserStatus             @default(ACTIVE) /// 状态：启用/禁用
-  departmentId   String? /// 所属部门
-  department     Department?            @relation(fields: [departmentId], references: [id], onDelete: Restrict)
-  roles          UserRole[] /// 多角色，可分配
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  deletedAt      DateTime? /// 软删除时间
-  isDeleted      Boolean                @default(false) /// 是否已删除
-  // 关联
-  postsCreated   Post[]                 @relation("PostCreatedBy") /// 创建的岗位
-  candidates     Candidate[]            @relation("CandidateCreatedBy") /// 录入的候选人
-  departmentLed  Department[]           @relation("Leader") /// 管理的部门
-  interviewTasks InterviewTask[] /// 作为面试官的面试任务
-  assessments    DepartmentAssessment[] /// 部门评定记录
-  notifications  Notification[] /// 接收的通知
-  logs           OperationLog[] /// 操作日志
-  attachments    Attachment[] /// 上传的附件
-  statusChanges  CandidateStatusHistory[] /// 执行的状态变更
+  /// 主键
+  id                  String                   @id @default(uuid())
+  /// 用户名，唯一
+  username            String                   @unique
+  /// 密码（加密存储，推荐使用 bcrypt）
+  password            String
+  /// 邮箱，可选
+  email               String?                  @unique
+  /// 邮箱是否已激活
+  emailVerified       Boolean                  @default(false)
+  /// 工号，唯一
+  employeeNo          String?                  @unique
+  /// 手机号，唯一
+  phone               String?                  @unique
+  /// 状态：启用/禁用
+  status              UserStatus               @default(ACTIVE)
+  /// 所属部门
+  departmentId        String?
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  /// 软删除时间
+  deletedAt           DateTime?
+  /// 是否已删除
+  isDeleted           Boolean                  @default(false)
+  attachments         Attachment[]
+  candidates          Candidate[]              @relation("CandidateCreatedBy")
+  statusChanges       CandidateStatusHistory[]
+  departmentLed       Department[]             @relation("Leader")
+  assessments         DepartmentAssessment[]
+  interviewTasks      InterviewTask[]
+  notifications       Notification[]
+  logs                OperationLog[]
+  invitationsReceived OrganizationInvitation[] @relation("InvitationReceived")
+  invitationsSent     OrganizationInvitation[] @relation("InvitationSent")
+  postsCreated        Post[]                   @relation("PostCreatedBy")
+  department          Department?              @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  roles               UserRole[]
 
   @@index([status])
   @@index([departmentId])
@@ -43,33 +55,33 @@ model User {
   @@index([isDeleted, status])
 }
 
-/// 用户状态
-enum UserStatus {
-  ACTIVE
-  DISABLED
-}
-
 /// 部门表（支持多级结构和负责人）
 model Department {
   id         String           @id @default(uuid())
-  name       String /// 部门名称
-  parentId   String? /// 上级部门
-  parent     Department?      @relation("DepartmentHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
-  children   Department[]     @relation("DepartmentHierarchy") /// 下级部门
-  leaderId   String? /// 负责人
-  leader     User?            @relation("Leader", fields: [leaderId], references: [id], onDelete: SetNull)
-  orgId      String? /// 所属公司/组织
-  org        Organization?    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  /// 部门名称
+  name       String
+  /// 上级部门
+  parentId   String?
+  /// 负责人
+  leaderId   String?
+  /// 所属公司/组织
+  orgId      String?
   status     DepartmentStatus @default(ACTIVE)
-  level      Int              @default(1) /// 部门层级深度，根部门为1
+  /// 部门层级深度，根部门为1
+  level      Int              @default(1)
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
-  deletedAt  DateTime? /// 软删除时间
-  isDeleted  Boolean          @default(false) /// 是否已删除
-  // 关联
-  users      User[]
-  posts      Post[]
+  /// 软删除时间
+  deletedAt  DateTime?
+  /// 是否已删除
+  isDeleted  Boolean          @default(false)
   candidates Candidate[]
+  leader     User?            @relation("Leader", fields: [leaderId], references: [id])
+  org        Organization?    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  parent     Department?      @relation("DepartmentHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children   Department[]     @relation("DepartmentHierarchy")
+  posts      Post[]
+  users      User[]
 
   @@index([status])
   @@index([orgId])
@@ -82,35 +94,74 @@ model Department {
   @@index([isDeleted, status])
 }
 
-/// 部门状态
-enum DepartmentStatus {
-  ACTIVE
-  DISABLED
-}
-
 /// 公司/组织表（支持多公司/多组织扩展）
 model Organization {
-  id          String       @id @default(uuid())
-  name        String /// 企业/组织名称
-  code        String?      @unique /// 编号
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id          String                   @id @default(uuid())
+  /// 企业/组织名称
+  name        String
+  /// 编号
+  code        String?                  @unique
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  /// 组织状态
+  status      OrganizationStatus       @default(ACTIVE)
   departments Department[]
+  invitations OrganizationInvitation[]
 
   @@index([createdAt])
+  @@index([status])
+}
+
+/// 组织邀请表
+model OrganizationInvitation {
+  id             String           @id @default(uuid())
+  /// 组织ID
+  organizationId String
+  /// 邀请人ID
+  inviterId      String
+  /// 被邀请人ID
+  inviteeId      String
+  /// 在组织中的角色
+  role           String
+  /// 邀请消息
+  message        String?
+  /// 邀请状态
+  status         InvitationStatus @default(PENDING)
+  /// 过期时间
+  expiresAt      DateTime
+  /// 响应时间
+  respondedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  invitee        User             @relation("InvitationReceived", fields: [inviteeId], references: [id])
+  inviter        User             @relation("InvitationSent", fields: [inviterId], references: [id])
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, inviteeId])
+  @@index([organizationId])
+  @@index([inviterId])
+  @@index([inviteeId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([organizationId, status])
+  @@index([inviteeId, status])
 }
 
 /// 角色表（内置/自定义角色，含权限分配）
 model Role {
   id          String       @id @default(uuid())
-  name        String /// 角色名称
-  code        String?      @unique /// 角色编码
-  description String? /// 描述
-  isSystem    Boolean      @default(false) /// 是否内置（系统级不可删改）
-  permissions Permission[] /// 菜单/按钮权限
-  users       UserRole[] /// 关联用户
+  /// 角色名称
+  name        String
+  /// 角色编码
+  code        String?      @unique
+  /// 描述
+  description String?
+  /// 是否内置（系统级不可删改）
+  isSystem    Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  users       UserRole[]
+  permissions Permission[] @relation("PermissionToRole")
 
   @@index([isSystem])
   @@index([createdAt])
@@ -119,11 +170,11 @@ model Role {
 /// 用户-角色多对多中间表
 model UserRole {
   id         String   @id @default(uuid())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String
-  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
   roleId     String
   assignedAt DateTime @default(now())
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
   @@index([userId])
@@ -134,49 +185,55 @@ model UserRole {
 /// 权限表（菜单、按钮等粒度，支持分配到角色）
 model Permission {
   id        String         @id @default(uuid())
-  name      String /// 权限名称
-  code      String?        @unique /// 权限编码
-  type      PermissionType /// 类型：菜单/按钮
+  /// 权限名称
+  name      String
+  /// 权限编码
+  code      String?        @unique
+  /// 类型：菜单/按钮
+  type      PermissionType
   parentId  String?
-  parent    Permission?    @relation("PermissionHierarchy", fields: [parentId], references: [id])
-  children  Permission[]   @relation("PermissionHierarchy")
-  roles     Role[] /// 关联角色
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
+  parent    Permission?    @relation("PermissionHierarchy", fields: [parentId], references: [id])
+  children  Permission[]   @relation("PermissionHierarchy")
+  roles     Role[]         @relation("PermissionToRole")
 
   @@index([type])
   @@index([parentId])
   @@index([type, parentId])
 }
 
-/// 权限类型
-enum PermissionType {
-  MENU
-  BUTTON
-}
-
 /// 岗位表（招聘岗位，含状态流转）
 model Post {
   id            String         @id @default(uuid())
-  name          String /// 岗位名称
-  departmentId  String /// 所属部门
-  department    Department     @relation(fields: [departmentId], references: [id], onDelete: Restrict)
-  jd            String? /// JD描述
-  hiringCount   Int? /// 招聘人数
-  priority      Int? /// 优先级
-  location      String? /// 工作地点
-  status        PostStatus     @default(OPEN) /// 岗位状态
+  /// 岗位名称
+  name          String
+  /// 所属部门
+  departmentId  String
+  /// JD描述
+  jd            String?
+  /// 招聘人数
+  hiringCount   Int?
+  /// 优先级
+  priority      Int?
+  /// 工作地点
+  location      String?
+  /// 岗位状态
+  status        PostStatus     @default(OPEN)
   createdById   String
-  createdBy     User           @relation("PostCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
   closedAt      DateTime?
   restoredAt    DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime? /// 软删除时间
-  isDeleted     Boolean        @default(false) /// 是否已删除
-  candidates    Candidate[] /// 关联候选人
-  interviews    Interview[] /// 面试流程
-  notifications Notification[] @relation("PostNotifications") /// 相关通知
+  /// 软删除时间
+  deletedAt     DateTime?
+  /// 是否已删除
+  isDeleted     Boolean        @default(false)
+  candidates    Candidate[]
+  interviews    Interview[]
+  notifications Notification[] @relation("PostNotifications")
+  createdBy     User           @relation("PostCreatedBy", fields: [createdById], references: [id])
+  department    Department     @relation(fields: [departmentId], references: [id])
 
   @@index([status])
   @@index([departmentId])
@@ -192,40 +249,47 @@ model Post {
   @@index([departmentId, isDeleted])
 }
 
-/// 岗位状态
-enum PostStatus {
-  OPEN
-  PAUSED
-  CLOSED
-}
-
 /// 候选人表（含简历、评定、状态流转等）
 model Candidate {
-  id               String                 @id @default(uuid())
-  name             String /// 姓名
-  email            String? /// 邮箱
-  phone            String? /// 手机号
-  resumeUrl        String? /// 简历附件链接
-  remarks          String? /// 备注
-  status           CandidateStatus        @default(NEW) /// 当前状态
-  source           String? /// 候选人来源（内推、网申、猎头等）
-  expectedSalary   String? /// 期望薪资
-  currentCompany   String? /// 当前公司
-  workExperience   Int? /// 工作年限
-  departmentId     String /// 目标部门
-  department       Department             @relation(fields: [departmentId], references: [id], onDelete: Restrict)
-  postId           String /// 目标岗位
-  post             Post                   @relation(fields: [postId], references: [id], onDelete: Restrict)
-  createdById      String
-  createdBy        User                   @relation("CandidateCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  assessment       DepartmentAssessment[] /// 部门评定记录
-  interviews       Interview[] /// 面试流程
-  notifications    Notification[]         @relation("CandidateNotifications") /// 相关通知
-  statusHistory    CandidateStatusHistory[] /// 状态变更历史
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  deletedAt        DateTime? /// 软删除时间
-  isDeleted        Boolean                @default(false) /// 是否已删除
+  id             String                   @id @default(uuid())
+  /// 姓名
+  name           String
+  /// 邮箱
+  email          String?
+  /// 手机号
+  phone          String?
+  /// 简历附件链接
+  resumeUrl      String?
+  /// 备注
+  remarks        String?
+  /// 当前状态
+  status         CandidateStatus          @default(NEW)
+  /// 候选人来源（内推、网申、猎头等）
+  source         String?
+  /// 期望薪资
+  expectedSalary String?
+  /// 当前公司
+  currentCompany String?
+  /// 工作年限
+  workExperience Int?
+  /// 目标部门
+  departmentId   String
+  /// 目标岗位
+  postId         String
+  createdById    String
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  /// 软删除时间
+  deletedAt      DateTime?
+  /// 是否已删除
+  isDeleted      Boolean                  @default(false)
+  createdBy      User                     @relation("CandidateCreatedBy", fields: [createdById], references: [id])
+  department     Department               @relation(fields: [departmentId], references: [id])
+  post           Post                     @relation(fields: [postId], references: [id])
+  statusHistory  CandidateStatusHistory[]
+  assessment     DepartmentAssessment[]
+  interviews     Interview[]
+  notifications  Notification[]           @relation("CandidateNotifications")
 
   @@index([status])
   @@index([departmentId])
@@ -248,15 +312,20 @@ model Candidate {
 
 /// 候选人状态变更历史表
 model CandidateStatusHistory {
-  id           String          @id @default(uuid())
-  candidateId  String /// 候选人ID
-  candidate    Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  fromStatus   CandidateStatus? /// 原状态
-  toStatus     CandidateStatus /// 目标状态
-  reason       String? /// 变更原因
-  operatorId   String /// 操作人
-  operator     User            @relation(fields: [operatorId], references: [id], onDelete: Restrict)
-  createdAt    DateTime        @default(now())
+  id          String           @id @default(uuid())
+  /// 候选人ID
+  candidateId String
+  /// 原状态
+  fromStatus  CandidateStatus?
+  /// 目标状态
+  toStatus    CandidateStatus
+  /// 变更原因
+  reason      String?
+  /// 操作人
+  operatorId  String
+  createdAt   DateTime         @default(now())
+  candidate   Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  operator    User             @relation(fields: [operatorId], references: [id])
 
   @@index([candidateId])
   @@index([operatorId])
@@ -266,27 +335,18 @@ model CandidateStatusHistory {
   @@index([candidateId, toStatus])
 }
 
-/// 候选人状态
-enum CandidateStatus {
-  NEW
-  DEPARTMENT_ASSESSING // 部门评定中
-  DEPARTMENT_PASSED // 评定通过
-  DEPARTMENT_FAILED // 评定不通过
-  INTERVIEWING
-  OFFERED // 录用
-  REJECTED // 淘汰
-}
-
 /// 部门评定表（会签/审核，支持多评定人）
 model DepartmentAssessment {
   id          String           @id @default(uuid())
-  candidate   Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   candidateId String
-  assessorId  String /// 评定人
-  assessor    User             @relation(fields: [assessorId], references: [id])
-  result      AssessmentResult /// 评定结果
+  /// 评定人
+  assessorId  String
+  /// 评定结果
+  result      AssessmentResult
   remarks     String?
   assessedAt  DateTime         @default(now())
+  assessor    User             @relation(fields: [assessorId], references: [id])
+  candidate   Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
   @@index([candidateId])
   @@index([assessorId])
@@ -295,34 +355,35 @@ model DepartmentAssessment {
   @@index([candidateId, result])
 }
 
-/// 评定结果
-enum AssessmentResult {
-  PASSED
-  FAILED
-  PENDING
-}
-
 /// 面试主表（一次大面试流程，如一面/二面/HR面等）
 /// 一条记录代表一次轮次的面试
 model Interview {
   id             String          @id @default(uuid())
   candidateId    String
-  candidate      Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   postId         String
-  post           Post            @relation(fields: [postId], references: [id], onDelete: Restrict)
-  round          Int /// 第几轮面试
+  /// 第几轮面试
+  round          Int
   status         InterviewStatus @default(SCHEDULED)
-  scheduledAt    DateTime /// 该轮面试计划时间
-  actualStartAt  DateTime? /// 实际开始时间
-  actualEndAt    DateTime? /// 实际结束时间
-  location       String? /// 面试地点
-  meetingLink    String? /// 在线面试链接
-  notes          String? /// 面试备注
+  /// 该轮面试计划时间
+  scheduledAt    DateTime
+  /// 实际开始时间
+  actualStartAt  DateTime?
+  /// 实际结束时间
+  actualEndAt    DateTime?
+  /// 面试地点
+  location       String?
+  /// 在线面试链接
+  meetingLink    String?
+  /// 面试备注
+  notes          String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
-  deletedAt      DateTime? /// 软删除时间
-  isDeleted      Boolean         @default(false) /// 是否已删除
-  /// 面试子表
+  /// 软删除时间
+  deletedAt      DateTime?
+  /// 是否已删除
+  isDeleted      Boolean         @default(false)
+  candidate      Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  post           Post            @relation(fields: [postId], references: [id])
   interviewTasks InterviewTask[]
 
   @@index([candidateId])
@@ -342,23 +403,34 @@ model Interview {
 model InterviewTask {
   id            String              @id @default(uuid())
   interviewId   String
-  interview     Interview           @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-  interviewerId String /// 面试官（单人）
-  interviewer   User                @relation(fields: [interviewerId], references: [id], onDelete: Restrict)
-  sequence      Int /// 并行/串行顺序标记（如1,2,3等）
+  /// 面试官（单人）
+  interviewerId String
+  /// 并行/串行顺序标记（如1,2,3等）
+  sequence      Int
   status        InterviewTaskStatus @default(SCHEDULED)
-  scheduledAt   DateTime? /// 该面试官实际约面时间
-  actualStartAt DateTime? /// 实际开始时间
-  actualEndAt   DateTime? /// 实际结束时间
-  feedback      String? /// 面试反馈
-  feedbackScore Int? /// 评价分数/维度
+  /// 该面试官实际约面时间
+  scheduledAt   DateTime?
+  /// 实际开始时间
+  actualStartAt DateTime?
+  /// 实际结束时间
+  actualEndAt   DateTime?
+  /// 面试反馈
+  feedback      String?
+  /// 评价分数/维度
+  feedbackScore Int?
   feedbackAt    DateTime?
-  decision      String? /// 面试决定（通过/不通过/待定）
-  notified      Boolean             @default(false) /// 是否已发通知
+  /// 面试决定（通过/不通过/待定）
+  decision      String?
+  /// 是否已发通知
+  notified      Boolean             @default(false)
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
-  deletedAt     DateTime? /// 软删除时间
-  isDeleted     Boolean             @default(false) /// 是否已删除
+  /// 软删除时间
+  deletedAt     DateTime?
+  /// 是否已删除
+  isDeleted     Boolean             @default(false)
+  interview     Interview           @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewer   User                @relation(fields: [interviewerId], references: [id])
 
   @@index([interviewId])
   @@index([interviewerId])
@@ -371,6 +443,188 @@ model InterviewTask {
   @@index([interviewerId, status])
   @@index([isDeleted, status])
   @@index([feedbackAt])
+}
+
+/// 通知消息表（系统消息、邮箱、短信等）
+model Notification {
+  id                 String           @id @default(uuid())
+  type               NotificationType
+  title              String
+  content            String
+  /// 接收人
+  receiverId         String
+  isRead             Boolean          @default(false)
+  sentAt             DateTime         @default(now())
+  relatedPostId      String?
+  relatedCandidateId String?
+  receiver           User             @relation(fields: [receiverId], references: [id])
+  relatedCandidate   Candidate?       @relation("CandidateNotifications", fields: [relatedCandidateId], references: [id])
+  relatedPost        Post?            @relation("PostNotifications", fields: [relatedPostId], references: [id])
+
+  @@index([receiverId])
+  @@index([isRead])
+  @@index([type])
+  @@index([sentAt])
+  @@index([receiverId, isRead])
+  @@index([relatedPostId])
+  @@index([relatedCandidateId])
+}
+
+/// 操作日志表（审计与追踪）
+model OperationLog {
+  id         String    @id @default(uuid())
+  userId     String
+  /// 操作内容描述（如：创建、更新、删除、登录、导出等）
+  action     String
+  /// 业务模块（如：USER、CANDIDATE、POST、INTERVIEW、DEPARTMENT等）
+  module     String
+  /// 关联对象ID
+  objectId   String?
+  /// 关联对象类型（如：User、Candidate、Post等）
+  objectType String?
+  /// 对象名称/标识（便于查看，如用户名、候选人姓名等）
+  objectName String?
+  /// 操作详情（JSON格式，存储变更前后的数据）
+  details    Json?
+  /// 操作IP地址
+  ipAddress  String?
+  /// 用户代理信息
+  userAgent  String?
+  /// 操作结果
+  result     LogResult @default(SUCCESS)
+  /// 错误信息（如果操作失败）
+  errorMsg   String?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([module])
+  @@index([objectType])
+  @@index([objectId])
+  @@index([action])
+  @@index([result])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([module, createdAt])
+  @@index([module, action])
+  @@index([objectType, objectId])
+}
+
+/// 附件表（简历等上传文件，简化设计）
+model Attachment {
+  id           String             @id @default(uuid())
+  /// 文件访问地址
+  url          String
+  /// 存储文件名
+  fileName     String
+  /// 原始文件名
+  originalName String
+  /// 文件类型（MIME type）
+  fileType     String
+  /// 文件大小（字节）
+  fileSize     Int?
+  /// 附件分类
+  category     AttachmentCategory @default(OTHER)
+  /// 文件描述
+  description  String?
+  /// 关联实体类型 (POST, CANDIDATE, INTERVIEW, USER)
+  entityType   String
+  /// 关联实体ID
+  entityId     String
+  /// 上传人
+  uploaderId   String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  /// 软删除时间
+  deletedAt    DateTime?
+  /// 是否已删除
+  isDeleted    Boolean            @default(false)
+  uploader     User               @relation(fields: [uploaderId], references: [id])
+
+  @@index([uploaderId])
+  @@index([fileType])
+  @@index([category])
+  @@index([entityType, entityId])
+  @@index([isDeleted])
+  @@index([createdAt])
+  @@index([uploaderId, isDeleted])
+  @@index([entityType, isDeleted])
+}
+
+/// 邮箱验证码表（替代内存存储）
+model EmailVerificationCode {
+  id        String   @id @default(uuid())
+  /// 邮箱地址
+  email     String
+  /// 验证码
+  code      String
+  /// 尝试次数
+  attempts  Int      @default(0)
+  /// 过期时间
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([expiresAt])
+  @@index([email, expiresAt])
+}
+
+/// 用户状态
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+/// 部门状态
+enum DepartmentStatus {
+  ACTIVE
+  DISABLED
+}
+
+/// 组织状态
+enum OrganizationStatus {
+  ACTIVE
+  DISABLED
+}
+
+/// 邀请状态
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+/// 权限类型
+enum PermissionType {
+  MENU
+  BUTTON
+}
+
+/// 岗位状态
+enum PostStatus {
+  OPEN
+  PAUSED
+  CLOSED
+}
+
+/// 候选人状态
+enum CandidateStatus {
+  NEW
+  DEPARTMENT_ASSESSING
+  DEPARTMENT_PASSED
+  DEPARTMENT_FAILED
+  INTERVIEWING
+  OFFERED
+  REJECTED
+}
+
+/// 评定结果
+enum AssessmentResult {
+  PASSED
+  FAILED
+  PENDING
 }
 
 /// 面试主表状态
@@ -389,30 +643,6 @@ enum InterviewTaskStatus {
   CANCELLED
 }
 
-/// 通知消息表（系统消息、邮箱、短信等）
-model Notification {
-  id                 String           @id @default(uuid())
-  type               NotificationType
-  title              String
-  content            String
-  receiverId         String /// 接收人
-  receiver           User             @relation(fields: [receiverId], references: [id])
-  isRead             Boolean          @default(false)
-  sentAt             DateTime         @default(now())
-  relatedPostId      String?
-  relatedPost        Post?            @relation("PostNotifications", fields: [relatedPostId], references: [id])
-  relatedCandidateId String?
-  relatedCandidate   Candidate?       @relation("CandidateNotifications", fields: [relatedCandidateId], references: [id])
-
-  @@index([receiverId])
-  @@index([isRead])
-  @@index([type])
-  @@index([sentAt])
-  @@index([receiverId, isRead])
-  @@index([relatedPostId])
-  @@index([relatedCandidateId])
-}
-
 /// 消息类型
 enum NotificationType {
   SYSTEM
@@ -420,97 +650,30 @@ enum NotificationType {
   SMS
 }
 
-/// 操作日志表（审计与追踪）
-model OperationLog {
-  id         String    @id @default(uuid())
-  userId     String
-  user       User      @relation(fields: [userId], references: [id])
-  action     String /// 操作内容描述（如：创建、更新、删除、登录、导出等）
-  module     String /// 业务模块（如：USER、CANDIDATE、POST、INTERVIEW、DEPARTMENT等）
-  objectId   String? /// 关联对象ID
-  objectType String? /// 关联对象类型（如：User、Candidate、Post等）
-  objectName String? /// 对象名称/标识（便于查看，如用户名、候选人姓名等）
-  details    Json? /// 操作详情（JSON格式，存储变更前后的数据）
-  ipAddress  String? /// 操作IP地址
-  userAgent  String? /// 用户代理信息
-  result     LogResult @default(SUCCESS) /// 操作结果
-  errorMsg   String? /// 错误信息（如果操作失败）
-  createdAt  DateTime  @default(now())
-
-  @@index([userId])
-  @@index([module])
-  @@index([objectType])
-  @@index([objectId])
-  @@index([action])
-  @@index([result])
-  @@index([createdAt])
-  @@index([userId, createdAt])
-  @@index([module, createdAt])
-  @@index([module, action])
-  @@index([objectType, objectId])
-}
-
 /// 操作结果
 enum LogResult {
-  SUCCESS /// 成功
-  FAILED /// 失败
-  PARTIAL /// 部分成功
-}
-
-/// 附件表（简历等上传文件，简化设计）
-model Attachment {
-  id            String             @id @default(uuid())
-  url           String             /// 文件访问地址
-  fileName      String             /// 存储文件名
-  originalName  String             /// 原始文件名
-  fileType      String             /// 文件类型（MIME type）
-  fileSize      Int?               /// 文件大小（字节）
-  category      AttachmentCategory @default(OTHER) /// 附件分类
-  description   String?            /// 文件描述
-  
-  // 简化的多态关联 - 只保留必要的
-  entityType    String             /// 关联实体类型 (POST, CANDIDATE, INTERVIEW, USER)
-  entityId      String             /// 关联实体ID
-  
-  uploaderId    String             /// 上传人
-  uploader      User               @relation(fields: [uploaderId], references: [id], onDelete: Restrict)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  deletedAt     DateTime?          /// 软删除时间
-  isDeleted     Boolean            @default(false) /// 是否已删除
-
-  @@index([uploaderId])
-  @@index([fileType])
-  @@index([category])
-  @@index([entityType, entityId]) /// 联合索引提升查询效率
-  @@index([isDeleted])
-  @@index([createdAt])
-  @@index([uploaderId, isDeleted])
-  @@index([entityType, isDeleted])
+  /// 成功
+  SUCCESS
+  /// 失败
+  FAILED
+  /// 部分成功
+  PARTIAL
 }
 
 /// 附件分类
 enum AttachmentCategory {
-  RESUME /// 简历
-  PORTFOLIO /// 作品集
-  CERTIFICATE /// 证书
-  JOB_DESCRIPTION /// 岗位描述
-  INTERVIEW_FEEDBACK /// 面试反馈
-  CONTRACT /// 合同
-  OTHER /// 其他
-}
-
-/// 邮箱验证码表（替代内存存储）
-model EmailVerificationCode {
-  id          String   @id @default(uuid())
-  email       String /// 邮箱地址
-  code        String /// 验证码
-  attempts    Int      @default(0) /// 尝试次数
-  expiresAt   DateTime /// 过期时间
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([email])
-  @@index([expiresAt])
-  @@index([email, expiresAt])
+  /// 简历
+  RESUME
+  /// 作品集
+  PORTFOLIO
+  /// 证书
+  CERTIFICATE
+  /// 岗位描述
+  JOB_DESCRIPTION
+  /// 面试反馈
+  INTERVIEW_FEEDBACK
+  /// 合同
+  CONTRACT
+  /// 其他
+  OTHER
 }

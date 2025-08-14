@@ -40,34 +40,6 @@ export class ProxyService {
           }
         : undefined;
 
-      // 执行权限检查
-      const permissionCheck = this.permissionService.checkPermission(
-        path,
-        method,
-        userInfo
-      );
-
-      if (!permissionCheck.allowed) {
-        this.logger.warn(`Permission denied for ${method} ${path}`, {
-          userId: userInfo?.id,
-          reason: permissionCheck.reason,
-        });
-
-        throw new HttpException(
-          {
-            message: "权限不足",
-            error: "Forbidden",
-            reason: permissionCheck.reason,
-          },
-          HttpStatus.FORBIDDEN
-        );
-      }
-
-      this.logger.debug(`Permission granted for ${method} ${path}`, {
-        userId: userInfo?.id,
-        reason: permissionCheck.reason,
-      });
-
       const url = new URL(`${this.serverBaseUrl}${path}`);
 
       // 添加查询参数

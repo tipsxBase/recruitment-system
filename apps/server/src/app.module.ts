@@ -11,6 +11,7 @@ import { InterviewsModule } from './interviews/interviews.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { FilesModule } from './files/files.module';
 import { SystemModule } from './system/system.module';
+import { OrganizationsModule } from './organizations/organizations.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { SystemModule } from './system/system.module';
     NotificationsModule,
     FilesModule,
     SystemModule,
+    OrganizationsModule,
   ],
   controllers: [],
   providers: [PrismaService],

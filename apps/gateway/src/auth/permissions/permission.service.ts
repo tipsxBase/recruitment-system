@@ -81,7 +81,7 @@ export class PermissionService {
     return (
       API_PERMISSION_CONFIG.find((rule) => {
         return (
-          this.pathMatches(rule.path, path) &&
+          this.pathMatches(`/api${rule.path}`, path) &&
           rule.method.toLowerCase() === method.toLowerCase()
         );
       }) || null
@@ -123,20 +123,7 @@ export class PermissionService {
       });
     }
 
-    // 2. 检查权限码
-    if (rule.permissions && rule.permissions.length > 0) {
-      const hasRequiredPermission = rule.permissions.some((permission) =>
-        user.permissions.includes(permission)
-      );
-      checks.push({
-        passed: hasRequiredPermission,
-        reason: hasRequiredPermission
-          ? "Permission check passed"
-          : `Required permissions: ${rule.permissions.join(", ")}, user permissions: ${user.permissions.join(", ")}`,
-      });
-    }
-
-    // 3. 检查部门权限（如果需要）
+    // 2. 检查部门权限（如果需要）
     if (rule.department) {
       const hasDepartment = user.departments && user.departments.length > 0;
       checks.push({
@@ -147,11 +134,11 @@ export class PermissionService {
       });
     }
 
-    // 如果没有任何检查条件，默认允许
+    // 如果没有任何检查条件，默认允许（已认证用户可访问）
     if (checks.length === 0) {
       return {
         allowed: true,
-        reason: "No specific restrictions",
+        reason: "No specific restrictions, allowing authenticated user",
         matchedRule: rule,
       };
     }
@@ -168,7 +155,7 @@ export class PermissionService {
 
     return {
       allowed: true,
-      reason: "All permission checks passed",
+      reason: "All role checks passed",
       matchedRule: rule,
     };
   }

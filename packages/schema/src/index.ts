@@ -5,6 +5,7 @@ export * from "./common.schema";
 export * from "./auth.schema";
 export * from "./user.schema";
 export * from "./department.schema";
+export * from "./organization.schema";
 export * from "./role.schema";
 export * from "./post.schema";
 export * from "./candidate.schema";
