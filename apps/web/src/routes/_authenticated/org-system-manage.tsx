@@ -233,160 +233,103 @@ function OrganizationManagement() {
     [editingOrganization, updateOrganizationMutation, editForm]
   );
 
-  // ==================== 渲染组件 ====================
-
-  // 处理加载和错误状态
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <span className="ml-2">加载中...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto py-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-red-500">
-            加载失败: {error.message}
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-2"
-              onClick={() => refetch()}
-            >
-              重试
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto py-6 space-y-6">
-      {/* 页面标题和操作区域 */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl font-bold">组织管理</CardTitle>
-              <CardDescription>
-                管理系统中的组织信息，支持创建、编辑、删除等操作
-              </CardDescription>
-            </div>
+      {/* 创建组织按钮 */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogTrigger asChild>
+          <Button className="bg-primary hover:bg-primary/90">
+            <Plus className="mr-2 h-4 w-4" />
+            创建组织
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>创建新组织</DialogTitle>
+            <DialogDescription>
+              填写以下信息创建一个新的组织。所有标记为 * 的字段都是必填项。
+            </DialogDescription>
+          </DialogHeader>
 
-            {/* 创建组织按钮 */}
-            <Dialog
-              open={isCreateDialogOpen}
-              onOpenChange={setIsCreateDialogOpen}
+          {/* 创建组织表单 */}
+          <Form {...createForm}>
+            <form
+              onSubmit={createForm.handleSubmit(handleCreateSubmit)}
+              className="space-y-4"
             >
-              <DialogTrigger asChild>
-                <Button className="bg-primary hover:bg-primary/90">
-                  <Plus className="mr-2 h-4 w-4" />
-                  创建组织
+              <FormField
+                control={createForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>组织名称 *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="请输入组织名称"
+                        {...field}
+                        disabled={createOrganizationMutation.isPending}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={createForm.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>组织编码</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="请输入组织编码"
+                        {...field}
+                        disabled={createOrganizationMutation.isPending}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      组织的唯一标识码，用于系统内部识别，可选填
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                  disabled={createOrganizationMutation.isPending}
+                >
+                  取消
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>创建新组织</DialogTitle>
-                  <DialogDescription>
-                    填写以下信息创建一个新的组织。所有标记为 *
-                    的字段都是必填项。
-                  </DialogDescription>
-                </DialogHeader>
+                <Button
+                  type="submit"
+                  disabled={createOrganizationMutation.isPending}
+                >
+                  {createOrganizationMutation.isPending ? "创建中..." : "创建"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
-                {/* 创建组织表单 */}
-                <Form {...createForm}>
-                  <form
-                    onSubmit={createForm.handleSubmit(handleCreateSubmit)}
-                    className="space-y-4"
-                  >
-                    <FormField
-                      control={createForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>组织名称 *</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="请输入组织名称"
-                              {...field}
-                              disabled={createOrganizationMutation.isPending}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={createForm.control}
-                      name="code"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>组织编码</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="请输入组织编码"
-                              {...field}
-                              disabled={createOrganizationMutation.isPending}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            组织的唯一标识码，用于系统内部识别，可选填
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <DialogFooter>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsCreateDialogOpen(false)}
-                        disabled={createOrganizationMutation.isPending}
-                      >
-                        取消
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={createOrganizationMutation.isPending}
-                      >
-                        {createOrganizationMutation.isPending
-                          ? "创建中..."
-                          : "创建"}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-
-        {/* 数据表格 */}
-        <CardContent>
-          <DataTable
-            columns={columns}
-            data={organizationData?.organizations || []}
-            searchKey="name"
-            searchPlaceholder="搜索组织名称..."
-            facetedFilters={[
-              {
-                column: "status",
-                title: "状态",
-                options: statusOptions,
-              },
-            ]}
-          />
-        </CardContent>
-      </Card>
+      <DataTable
+        columns={columns}
+        data={organizationData?.organizations || []}
+        searchKey="name"
+        searchPlaceholder="搜索组织名称..."
+        facetedFilters={[
+          {
+            column: "status",
+            title: "状态",
+            options: statusOptions,
+          },
+        ]}
+      />
 
       {/* 编辑组织对话框 */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

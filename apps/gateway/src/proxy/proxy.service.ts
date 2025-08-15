@@ -29,17 +29,6 @@ export class ProxyService {
     user?: any
   ): Promise<any> {
     try {
-      // 构造用户信息
-      const userInfo: UserInfo | undefined = user
-        ? {
-            id: user.sub || user.id,
-            email: user.email,
-            roles: user.roles || [],
-            permissions: user.permissions || [],
-            departments: user.departments || [],
-          }
-        : undefined;
-
       const url = new URL(`${this.serverBaseUrl}${path}`);
 
       // 添加查询参数
@@ -50,9 +39,14 @@ export class ProxyService {
       }
 
       const requestHeaders: Record<string, string> = {
-        "Content-Type": "application/json",
+        // 先扩展传入的headers，然后确保Content-Type正确
         ...headers,
       };
+
+      // 对于有body的请求，确保Content-Type为application/json
+      // if (["POST", "PUT", "PATCH"].includes(method.toUpperCase()) && body) {
+      //   requestHeaders["Content-Type"] = "application/json";
+      // }
 
       // 添加用户信息到请求头，供 server 服务使用
       if (user) {

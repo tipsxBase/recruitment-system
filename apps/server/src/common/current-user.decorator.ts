@@ -23,6 +23,9 @@ export const CurrentUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     // 用户信息存储在 headers 中 从 headers 获取用户信息
+    console.log('=== CURRENT USER DEBUG ===');
+    console.log('Request headers:', request.headers);
+    console.log('=== END CURRENT USER DEBUG ===');
     const userId = getValueFromRequestHeaders(request.headers, 'x-user-id');
     const userRole = getValueFromRequestHeaders(
       request.headers,

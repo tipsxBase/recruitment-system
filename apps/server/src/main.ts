@@ -32,12 +32,13 @@ async function bootstrap() {
     console.log('🔒 CORS disabled for production (server-to-server only)');
   }
 
-  // 全局验证管道
+  // 全局验证管道 - 暂时简化配置用于调试
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
+      // 暂时移除这些选项进行调试
+      // whitelist: true,
+      // forbidNonWhitelisted: true,
     }),
   );
 

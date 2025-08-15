@@ -44,13 +44,12 @@ export class OrganizationsController {
   /**
    * 获取组织列表
    * 权限：仅超级管理员可访问
-   * GET /api/v1/organizations
+   * GET /api/v1/organizations/page
    */
-  @Get()
-  async getOrganizations(@Query() query: GetOrganizationsRequest) {
+  @Post('page')
+  async getOrganizations(@Body() body: GetOrganizationsRequest) {
     // 验证查询参数
-    const validatedQuery = GetOrganizationsRequestSchema.parse(query);
-
+    const validatedQuery = GetOrganizationsRequestSchema.parse(body);
     return this.organizationsService.getOrganizations(validatedQuery);
   }
 
@@ -71,7 +70,10 @@ export class OrganizationsController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createOrganization(@Body() body: CreateOrganizationRequest) {
+  async createOrganization(
+    @CurrentUser() user,
+    @Body() body: CreateOrganizationRequest,
+  ) {
     // 验证请求参数
     const validatedData = CreateOrganizationRequestSchema.parse(body);
 

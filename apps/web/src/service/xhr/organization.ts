@@ -23,7 +23,7 @@ export const organizationApi = {
    * 获取组织列表
    */
   getOrganizations: (params: GetOrganizationsRequest) =>
-    get<GetOrganizationsResponse>("/organizations", params),
+    post<GetOrganizationsResponse>("/organizations/page", params),
 
   /**
    * 获取组织详情
