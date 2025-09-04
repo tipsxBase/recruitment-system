@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { organizationApi } from "@/service/xhr/organization";
+import { organizationApi } from "@/service/organization";
 import type {
   GetOrganizationsRequest,
   GetOrganizationsResponse,

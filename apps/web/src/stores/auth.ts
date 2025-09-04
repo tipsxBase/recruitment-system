@@ -6,7 +6,7 @@ import {
   logout,
   register,
   sendEmail,
-} from "@/service/xhr/user";
+} from "@/service/user";
 import type {
   MenuResponse,
   SendNotificationResponse,

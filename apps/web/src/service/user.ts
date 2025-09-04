@@ -5,7 +5,7 @@ import type {
   SendNotificationResponse,
   User,
 } from "@recruitment/schema";
-import { get, post } from "./fetch";
+import { get, post } from "./xhr/fetch";
 
 export const getProfile = () => {
   return get<User>("/auth/profile");

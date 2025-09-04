@@ -13,7 +13,7 @@ import type {
   GetInvitationsRequest,
   GetInvitationsResponse,
 } from "@recruitment/schema";
-import { get, post, put, del } from "./fetch";
+import { get, post, put, del } from "./xhr/fetch";
 
 /**
  * 组织管理 API 服务

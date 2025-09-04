@@ -9,7 +9,6 @@ import {
   Query,
   HttpCode,
   HttpStatus,
-  BadRequestException,
 } from '@nestjs/common';
 import { OrganizationsService } from './organizations.service';
 import {
@@ -31,15 +30,6 @@ import { CurrentUser, User } from '@/common/current-user.decorator';
 @Controller('organizations')
 export class OrganizationsController {
   constructor(private organizationsService: OrganizationsService) {}
-
-  /**
-   * 验证超级管理员权限
-   */
-  private validateSuperAdminPermission(userRole: string) {
-    if (userRole !== 'SUPER_ADMIN') {
-      throw new BadRequestException('仅超级管理员可执行此操作');
-    }
-  }
 
   /**
    * 获取组织列表
