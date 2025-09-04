@@ -39,6 +39,9 @@ export const organizationColumns = (
         className="translate-y-[2px]"
       />
     ),
+    meta: {
+      title: "选择",
+    },
     enableSorting: false,
     enableHiding: false,
   },
@@ -47,6 +50,9 @@ export const organizationColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="组织名称" />
     ),
+    meta: {
+      title: "组织名称",
+    },
     cell: ({ row }) => (
       <div className="font-medium max-w-[200px] truncate">
         {row.getValue("name")}
@@ -58,6 +64,9 @@ export const organizationColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="组织编码" />
     ),
+    meta: {
+      title: "组织编码",
+    },
     cell: ({ row }) => {
       const code = row.getValue("code") as string;
       return code ? (
@@ -72,6 +81,9 @@ export const organizationColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="状态" />
     ),
+    meta: {
+      title: "状态",
+    },
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
       return (
@@ -87,6 +99,9 @@ export const organizationColumns = (
   {
     accessorKey: "admin",
     header: "管理员",
+    meta: {
+      title: "管理员",
+    },
     cell: ({ row }) => {
       const admin = row.getValue("admin") as Organization["admin"];
       return admin ? (
@@ -101,24 +116,26 @@ export const organizationColumns = (
   },
   {
     accessorKey: "userCount",
+    meta: {
+      title: "用户数",
+    },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="用户数" />
     ),
     cell: ({ row }) => (
-      <div className="text-center">
-        <Badge variant="outline">{row.getValue("userCount") || 0}</Badge>
-      </div>
+      <div className="text-center">{row.getValue("userCount") || 0}</div>
     ),
   },
   {
     accessorKey: "departmentCount",
+    meta: {
+      title: "部门数",
+    },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="部门数" />
     ),
     cell: ({ row }) => (
-      <div className="text-center">
-        <Badge variant="outline">{row.getValue("departmentCount") || 0}</Badge>
-      </div>
+      <div className="text-center">{row.getValue("departmentCount") || 0}</div>
     ),
   },
   {
@@ -126,6 +143,9 @@ export const organizationColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="创建时间" />
     ),
+    meta: {
+      title: "创建时间",
+    },
     cell: ({ row }) => {
       const date = new Date(row.getValue("createdAt"));
       return (
@@ -147,8 +167,23 @@ export const organizationColumns = (
         row={row}
         onEdit={() => onEdit(row.original)}
         onDelete={() => onDelete(row.original.id)}
+        actions={[
+          {
+            label: "用户管理",
+            onClick: () => alert(`重置 ${row.original.name} 管理员密码`),
+          },
+          {
+            label: "部门管理",
+            onClick: () => alert(`重置 ${row.original.name} 管理员密码`),
+          },
+          {
+            label: "重置管理员密码",
+            onClick: () => alert(`重置 ${row.original.name} 管理员密码`),
+          },
+        ]}
       />
     ),
+
     enableSorting: false,
     enableHiding: false,
   },
